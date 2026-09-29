@@ -4,7 +4,7 @@ namespace PizzaAsteroidApp
 {
     public class PizzaAsteroid
     {
-        private string _name = "Астероїд-За замовчуванням";
+        private string _name = "Астероїд";
         private CrustType _crust;
         private double _diameterKm;
         private int _temperatureCelsius;
@@ -87,8 +87,6 @@ namespace PizzaAsteroidApp
             }
         }
 
-        // overload consnstructor
-
         public PizzaAsteroid()
         {
             Crust = CrustType.Classic;
@@ -126,38 +124,32 @@ namespace PizzaAsteroidApp
             DiscoveryDate = date;
         }
 
-        // overload HeatUp
-
         public void HeatUp(int degrees)
         {
             if (degrees <= 0)
-            {
-                Console.WriteLine("Значення нагріву має бути додатним.");
-                return;
-            }
+                throw new ArgumentOutOfRangeException(nameof(degrees), "Значення нагріву має бути додатним.");
 
             int targetTemp = TemperatureCelsius + degrees;
-            TemperatureCelsius = ClampTemperature(targetTemp);
-            RecalculateThermalState();
+            TemperatureCelsius = targetTemp > 500 ? 500 : targetTemp;
         }
 
         public void HeatUp(int degrees, string heatSource)
         {
-            Console.WriteLine($"[Нагрів]: Астероїд '{Name}' піддано опроміненню від джерела: \"{heatSource}\".");
+            if (string.IsNullOrWhiteSpace(heatSource))
+                throw new ArgumentException("Джерело тепла не може бути порожнім.", nameof(heatSource));
+
+            Console.WriteLine($"[Джерело тепла]: {heatSource}");
             HeatUp(degrees);
         }
 
         public void HeatUp(double factor)
         {
             if (factor <= 1.0)
-            {
-                Console.WriteLine("Коефіцієнт нагріву має бути більшим за 1.0.");
-                return;
-            }
+                throw new ArgumentOutOfRangeException(nameof(factor), "Коефіцієнт нагріву повинен бути більшим за 1.0.");
 
-            int boost = (int)Math.Round(Math.Abs(TemperatureCelsius == 0 ? 25 : TemperatureCelsius) * (factor - 1.0));
-            Console.WriteLine($"[Інтенсивний нагрів]: Застосовано коефіцієнт x{factor:F1} (підйом на +{boost}°C).");
-            HeatUp(Math.Max(boost, 5));
+            int currentBase = TemperatureCelsius == 0 ? 20 : Math.Abs(TemperatureCelsius);
+            int boost = Math.Max((int)Math.Round(currentBase * (factor - 1.0)), 5);
+            HeatUp(boost);
         }
 
         public void Slice(int parts)
@@ -165,8 +157,8 @@ namespace PizzaAsteroidApp
             if (parts < 2)
                 throw new ArgumentException("Кількість шматків має бути не менше 2.", nameof(parts));
 
-            ApplySliceDivision(parts);
-            Console.WriteLine($"Астероїд '{Name}' успішно нарізано на {parts} шматків!");
+            double newDiameter = _diameterKm / Math.Sqrt(parts);
+            DiameterKm = Math.Round(newDiameter, 2);
         }
 
         public string CollideWithTarget(string targetPlanet)
@@ -179,27 +171,11 @@ namespace PizzaAsteroidApp
             return $"Астероїд '{Name}' зіткнувся з об'єктом '{targetPlanet}'. Енергія удару: {energyStr} Мт ТНТ. Соус розлетівся по орбіті!";
         }
 
-        private int ClampTemperature(int temp)
+        public string GetThermalReport()
         {
-            if (temp > 500)
-            {
-                Console.WriteLine("Увага: Досягнуто максимальної температури випікання (500°C)!");
-                return 500;
-            }
-            return temp;
-        }
-
-        private void RecalculateThermalState()
-        {
-            if (TemperatureCelsius > 180)
-                Console.WriteLine($"[Термодатчик]: Сир на астероїді '{Name}' плавиться і булькає! Поточна T = {TemperatureCelsius}°C.");
-            else
-                Console.WriteLine($"[Термодатчик]: Астероїд нагріто до {TemperatureCelsius}°C. Бортик залишається хрустким.");
-        }
-
-        private void ApplySliceDivision(int parts)
-        {
-            _diameterKm = Math.Round(_diameterKm / Math.Sqrt(parts), 2);
+            string status = TemperatureCelsius > 180 ? "Сир плавиться і булькає!" : "Бортик залишається хрустким.";
+            string limit = TemperatureCelsius == 500 ? " (Досягнуто ліміту 500°C)" : "";
+            return $"T = {TemperatureCelsius}°C. {status}{limit}";
         }
 
         private double CalculateImpactEnergy()
