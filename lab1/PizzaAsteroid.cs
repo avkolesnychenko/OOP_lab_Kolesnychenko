@@ -95,13 +95,26 @@ namespace PizzaAsteroidApp
             DiscoveryDate = DateTime.Now.Date;
         }
 
-        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese, DateTime discoveryDate, string sauce = "Томатний Класик")
+        public PizzaAsteroid(string name, CrustType crust, double diameterKm)
         {
             Name = name;
             Crust = crust;
             DiameterKm = diameterKm;
+            TemperatureCelsius = -40;
+            HasExtraCheese = false;
+            DiscoveryDate = DateTime.Now.Date;
+        }
+
+        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese)
+            : this(name, crust, diameterKm)
+        {
             TemperatureCelsius = temperatureCelsius;
             HasExtraCheese = hasExtraCheese;
+        }
+
+        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese, DateTime discoveryDate, string sauce = "Томатний Класик")
+            : this(name, crust, diameterKm, temperatureCelsius, hasExtraCheese)
+        {
             SauceType = sauce;
             SetDiscoveryDate(discoveryDate);
         }
@@ -117,7 +130,25 @@ namespace PizzaAsteroidApp
                 throw new ArgumentOutOfRangeException(nameof(degrees), "Значення нагріву має бути додатним.");
 
             int targetTemp = TemperatureCelsius + degrees;
-            TemperatureCelsius = ClampTemperature(targetTemp);
+            TemperatureCelsius = targetTemp > 500 ? 500 : targetTemp;
+        }
+
+        public void HeatUp(int degrees, string heatSource)
+        {
+            if (string.IsNullOrWhiteSpace(heatSource))
+                throw new ArgumentException("Джерело тепла не може бути порожнім.", nameof(heatSource));
+
+            HeatUp(degrees);
+        }
+
+        public void HeatUp(double factor)
+        {
+            if (factor <= 1.0)
+                throw new ArgumentOutOfRangeException(nameof(factor), "Коефіцієнт нагріву повинен бути більшим за 1.0.");
+
+            int currentBase = TemperatureCelsius == 0 ? 20 : Math.Abs(TemperatureCelsius);
+            int boost = Math.Max((int)Math.Round(currentBase * (factor - 1.0)), 5);
+            HeatUp(boost);
         }
 
         public void Slice(int parts)
@@ -125,7 +156,8 @@ namespace PizzaAsteroidApp
             if (parts < 2)
                 throw new ArgumentException("Кількість шматків має бути не менше 2.", nameof(parts));
 
-            ApplySliceDivision(parts);
+            double newDiameter = _diameterKm / Math.Sqrt(parts);
+            DiameterKm = Math.Round(newDiameter, 2);
         }
 
         public string CollideWithTarget(string targetPlanet)
@@ -138,15 +170,11 @@ namespace PizzaAsteroidApp
             return $"Астероїд '{Name}' зіткнувся з об'єктом '{targetPlanet}'. Енергія удару: {energyStr} Мт ТНТ. Соус розлетівся по орбіті!";
         }
 
-        private int ClampTemperature(int temp)
+        public string GetThermalReport()
         {
-            return temp > 500 ? 500 : temp;
-        }
-
-        private void ApplySliceDivision(int parts)
-        {
-            double newDiameter = _diameterKm / Math.Sqrt(parts);
-            DiameterKm = Math.Round(newDiameter, 2);
+            string status = TemperatureCelsius > 180 ? "Сир плавиться і булькає!" : "Бортик залишається хрустким.";
+            string limit = TemperatureCelsius == 500 ? " (Досягнуто ліміту 500°C)" : "";
+            return $"T = {TemperatureCelsius}°C. {status}{limit}";
         }
 
         private double CalculateImpactEnergy()
