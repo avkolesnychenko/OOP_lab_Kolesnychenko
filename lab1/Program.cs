@@ -149,6 +149,13 @@ namespace PizzaAsteroidApp
 
                 asteroid.HasExtraCheese = ReadValidatedBool("Чи є подвійний сир? (1/так - true, 0/ні - false): ");
 
+                Console.Write("Введіть тип соусу (натисніть Enter для 'Томатний Класик'): ");
+                string sauceInput = Console.ReadLine()!.Trim();
+                if (!string.IsNullOrEmpty(sauceInput))
+                {
+                    asteroid.SauceType = sauceInput;
+                }
+
                 while (true)
                 {
                     try
@@ -175,6 +182,8 @@ namespace PizzaAsteroidApp
             {
                 var rand = new Random();
                 string[] names = { "Пепероні-X", "Квадро-Формаджо", "Карбонара-99", "Гаваї-Ультра", "Діавола-Prime" };
+                string[] sauces = { "Барбекю", "Часниковий", "Песто", "Гострий Чилі", "Томатний Класик" };
+
                 try
                 {
                     PizzaAsteroid asteroid = new(
@@ -183,7 +192,8 @@ namespace PizzaAsteroidApp
                         diameterKm: Math.Round(rand.NextDouble() * 99 + 1, 2),
                         temperatureCelsius: rand.Next(-200, 350),
                         hasExtraCheese: rand.Next(2) == 1,
-                        discoveryDate: DateTime.Now.AddDays(-rand.Next(1, 5000))
+                        discoveryDate: DateTime.Now.AddDays(-rand.Next(1, 5000)),
+                        sauce: sauces[rand.Next(sauces.Length)]
                     );
 
                     Asteroids.Add(asteroid);
@@ -333,7 +343,15 @@ namespace PizzaAsteroidApp
                     Console.Write("На скільки градусів підняти температуру?: ");
                     if (int.TryParse(Console.ReadLine(), out int deg))
                     {
-                        target.HeatUp(deg);
+                        try
+                        {
+                            target.HeatUp(deg);
+                            Console.WriteLine($"Успіх! Астероїд '{target.Name}' нагріто. Нова T = {target.TemperatureCelsius}°C.");
+                        }
+                        catch (ArgumentOutOfRangeException ex)
+                        {
+                            Console.WriteLine($"[Помилка]: {ex.Message}");
+                        }
                     }
                     else
                     {
@@ -347,6 +365,8 @@ namespace PizzaAsteroidApp
                         try
                         {
                             target.Slice(slices);
+                            Console.WriteLine($"Успіх! Астероїд '{target.Name}' розрізано на {slices} шматків.");
+                            Console.WriteLine($"Новий калібр частки: {target.DiameterKm} км, орієнтовний об'єм частки: {target.EstimatedVolumeKm3} км³.");
                         }
                         catch (ArgumentException ex)
                         {

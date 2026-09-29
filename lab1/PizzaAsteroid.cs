@@ -14,10 +14,7 @@ namespace PizzaAsteroidApp
 
         public string Name
         {
-            get
-            {
-                return _name;
-            }
+            get => _name;
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
@@ -36,10 +33,7 @@ namespace PizzaAsteroidApp
 
         public CrustType Crust
         {
-            get
-            {
-                return _crust;
-            }
+            get => _crust;
             set
             {
                 if (!Enum.IsDefined(typeof(CrustType), value))
@@ -50,10 +44,7 @@ namespace PizzaAsteroidApp
 
         public double DiameterKm
         {
-            get
-            {
-                return _diameterKm;
-            }
+            get => _diameterKm;
             set
             {
                 if (value < 0.1 || value > 1000.0)
@@ -64,10 +55,7 @@ namespace PizzaAsteroidApp
 
         public int TemperatureCelsius
         {
-            get
-            {
-                return _temperatureCelsius;
-            }
+            get => _temperatureCelsius;
             set
             {
                 if (value < -273 || value > 500)
@@ -80,10 +68,7 @@ namespace PizzaAsteroidApp
 
         public DateTime DiscoveryDate
         {
-            get
-            {
-                return _discoveryDate;
-            }
+            get => _discoveryDate;
             private set
             {
                 DateTime minDate = new DateTime(1990, 1, 1);
@@ -99,7 +84,6 @@ namespace PizzaAsteroidApp
             {
                 double radius = _diameterKm / 2.0;
                 double volume = (4.0 / 3.0) * Math.PI * Math.Pow(radius, 3);
-
                 return volume < 0.01 ? Math.Round(volume, 5) : Math.Round(volume, 2);
             }
         }
@@ -131,16 +115,10 @@ namespace PizzaAsteroidApp
         public void HeatUp(int degrees)
         {
             if (degrees <= 0)
-            {
-                Console.WriteLine("Значення нагріву має бути додатним.");
-                return;
-            }
+                throw new ArgumentOutOfRangeException(nameof(degrees), "Значення нагріву має бути додатним.");
 
-            int oldTemp = TemperatureCelsius;
-            int targetTemp = oldTemp + degrees;
-
+            int targetTemp = TemperatureCelsius + degrees;
             TemperatureCelsius = ClampTemperature(targetTemp);
-            RecalculateThermalState();
         }
 
         public void Slice(int parts)
@@ -149,7 +127,6 @@ namespace PizzaAsteroidApp
                 throw new ArgumentException("Кількість шматків має бути не менше 2.", nameof(parts));
 
             ApplySliceDivision(parts);
-            Console.WriteLine($"Астероїд '{Name}' успішно нарізано на {parts} шматків!");
         }
 
         public string CollideWithTarget(string targetPlanet)
@@ -164,35 +141,18 @@ namespace PizzaAsteroidApp
 
         private int ClampTemperature(int temp)
         {
-            if (temp > 500)
-            {
-                Console.WriteLine("Увага: Досягнуто максимальної температури випікання (500°C)!");
-                return 500;
-            }
-            return temp;
-        }
-
-        private void RecalculateThermalState()
-        {
-            if (TemperatureCelsius > 180)
-            {
-                Console.WriteLine($"[Термодатчик]: Сир на астероїді '{Name}' плавиться і булькає! Поточна T = {TemperatureCelsius}°C.");
-            }
-            else
-            {
-                Console.WriteLine($"[Термодатчик]: Астероїд нагріто до {TemperatureCelsius}°C. Бортик залишається хрустким.");
-            }
+            return temp > 500 ? 500 : temp;
         }
 
         private void ApplySliceDivision(int parts)
         {
-            _diameterKm = Math.Round(_diameterKm / Math.Sqrt(parts), 2);
+            double newDiameter = _diameterKm / Math.Sqrt(parts);
+            DiameterKm = Math.Round(newDiameter, 2);
         }
 
         private double CalculateImpactEnergy()
         {
             double energy = EstimatedVolumeKm3 * 1.75;
-
             return energy < 0.01 ? Math.Round(energy, 4) : Math.Round(energy, 2);
         }
     }
