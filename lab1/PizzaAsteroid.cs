@@ -11,6 +11,7 @@ namespace PizzaAsteroidApp
         private DateTime _discoveryDate;
 
         public string SauceType { get; set; } = "Томатний Класик";
+        public bool HasExtraCheese { get; set; }
 
         public string Name
         {
@@ -64,14 +65,12 @@ namespace PizzaAsteroidApp
             }
         }
 
-        public bool HasExtraCheese { get; set; }
-
         public DateTime DiscoveryDate
         {
             get => _discoveryDate;
             private set
             {
-                DateTime minDate = new DateTime(1990, 1, 1);
+                DateTime minDate = new(1990, 1, 1);
                 if (value < minDate || value > DateTime.Now.Date.AddDays(1))
                     throw new ArgumentOutOfRangeException(nameof(value), "Дата відкриття має бути в межах від 01.01.1990 до сьогодення.");
                 _discoveryDate = value.Date;
