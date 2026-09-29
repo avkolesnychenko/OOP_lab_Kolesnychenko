@@ -17,7 +17,7 @@ namespace PizzaAsteroidApp
             bool running = true;
             while (running)
             {
-                Console.WriteLine($"Заповненість: {Asteroids.Count} / {_maxCapacity}");
+                Console.WriteLine($"\nЗаповненість: {Asteroids.Count} / {_maxCapacity}");
                 Console.WriteLine("1 – Додати об'єкт");
                 Console.WriteLine("2 – Переглянути всі об'єкти");
                 Console.WriteLine("3 – Знайти об'єкт");
@@ -67,49 +67,44 @@ namespace PizzaAsteroidApp
 
             Console.WriteLine("Режим додавання:");
             Console.WriteLine("1 - Ввести дані вручну");
-            Console.WriteLine("2 - Згенерувати автоматично");
-            Console.WriteLine("3 – Створити за замовчуванням (Default Constructor)");
+            Console.WriteLine("2 - Згенерувати автоматично (випадковий конструктор)");
+            Console.WriteLine("3 – Створити конструктором за замовчуванням з ініціалізатором");
             Console.Write(">");
             string mode = Console.ReadLine()!.Trim();
 
             if (mode == "1")
             {
-                PizzaAsteroid asteroid = new();
-
+                string name;
                 while (true)
                 {
                     try
                     {
                         Console.Write("Введіть назву астероїда (3-20 симв., літери/цифри/-): ");
                         string val = Console.ReadLine()!;
-                        asteroid.Name = val;
+                        var temp = new PizzaAsteroid { Name = val };
+                        name = temp.Name;
                         break;
                     }
                     catch (ArgumentException ex)
                     {
-                        Console.WriteLine($"[Помилка властивості Name]: {ex.Message}");
+                        Console.WriteLine($"[Помилка назви]: {ex.Message}");
                     }
                 }
 
+                CrustType crust;
                 while (true)
                 {
-                    try
+                    Console.WriteLine("Оберіть бортик: 1 - Thin, 2 - CheeseStuffed, 3 - DeepDish, 4 - Classic");
+                    Console.Write("Номер (1-4): ");
+                    if (int.TryParse(Console.ReadLine(), out int raw) && Enum.IsDefined(typeof(CrustType), raw))
                     {
-                        Console.WriteLine("Оберіть бортик/тісто: 1 - Thin, 2 - CheeseStuffed, 3 - DeepDish, 4 - Classic");
-                        Console.Write("Введіть номер (1-4): ");
-                        if (int.TryParse(Console.ReadLine(), out int raw) && Enum.IsDefined(typeof(CrustType), raw))
-                        {
-                            asteroid.Crust = (CrustType)raw;
-                            break;
-                        }
-                        throw new ArgumentException("Введено число поза списком доступних типів бортика.");
+                        crust = (CrustType)raw;
+                        break;
                     }
-                    catch (ArgumentException ex)
-                    {
-                        Console.WriteLine($"[Помилка властивості Crust]: {ex.Message}");
-                    }
+                    Console.WriteLine("Помилка! Введіть число від 1 до 4.");
                 }
 
+                double diameter;
                 while (true)
                 {
                     try
@@ -118,17 +113,19 @@ namespace PizzaAsteroidApp
                         string raw = Console.ReadLine()!.Replace(',', '.');
                         if (double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out double val))
                         {
-                            asteroid.DiameterKm = val;
+                            var temp = new PizzaAsteroid { DiameterKm = val };
+                            diameter = temp.DiameterKm;
                             break;
                         }
-                        throw new FormatException("Введене значення не є дійсним числом.");
+                        throw new FormatException("Введене значення не є числом.");
                     }
                     catch (Exception ex) when (ex is ArgumentOutOfRangeException || ex is FormatException)
                     {
-                        Console.WriteLine($"[Помилка властивості DiameterKm]: {ex.Message}");
+                        Console.WriteLine($"[Помилка діаметра]: {ex.Message}");
                     }
                 }
 
+                int tempC;
                 while (true)
                 {
                     try
@@ -136,19 +133,21 @@ namespace PizzaAsteroidApp
                         Console.Write("Введіть температуру в °C (-273 .. 500): ");
                         if (int.TryParse(Console.ReadLine(), out int val))
                         {
-                            asteroid.TemperatureCelsius = val;
+                            var temp = new PizzaAsteroid { TemperatureCelsius = val };
+                            tempC = temp.TemperatureCelsius;
                             break;
                         }
                         throw new FormatException("Температура повинна бути цілим числом.");
                     }
                     catch (Exception ex) when (ex is ArgumentOutOfRangeException || ex is FormatException)
                     {
-                        Console.WriteLine($"[Помилка властивості TemperatureCelsius]: {ex.Message}");
+                        Console.WriteLine($"[Помилка температури]: {ex.Message}");
                     }
                 }
 
-                asteroid.HasExtraCheese = ReadValidatedBool("Чи є подвійний сир? (1/так - true, 0/ні - false): ");
+                bool extraCheese = ReadValidatedBool("Чи є подвійний сир? (1/так, 0/ні): ");
 
+                DateTime date;
                 while (true)
                 {
                     try
@@ -157,7 +156,9 @@ namespace PizzaAsteroidApp
                         string raw = Console.ReadLine()!.Trim();
                         if (DateTime.TryParseExact(raw, "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime d))
                         {
-                            asteroid.SetDiscoveryDate(d);
+                            var temp = new PizzaAsteroid();
+                            temp.SetDiscoveryDate(d);
+                            date = temp.DiscoveryDate;
                             break;
                         }
                         throw new FormatException("Формат дати має бути dd.MM.yyyy (наприклад, 12.04.2021).");
@@ -168,44 +169,72 @@ namespace PizzaAsteroidApp
                     }
                 }
 
+                Console.Write("Введіть назву соусу (Enter для 'Томатний Класик'): ");
+                string sauceInput = Console.ReadLine()!.Trim();
+                string sauce = string.IsNullOrWhiteSpace(sauceInput) ? "Томатний Класик" : sauceInput;
+
+                PizzaAsteroid asteroid = new(name, crust, diameter, tempC, extraCheese, date, sauce);
                 Asteroids.Add(asteroid);
-                Console.WriteLine($"Успіх! Астероїд '{asteroid.Name}' успішно створено та додано!");
+                Console.WriteLine($"\n[Повідомлення конструктора]: Спрацював повний конструктор PizzaAsteroid(name, crust, diameterKm, temp, cheese, date, sauce).");
+                Console.WriteLine($"Успіх! Астероїд '{asteroid.Name}' додано!");
             }
             else if (mode == "2")
             {
                 var rand = new Random();
-                string[] names = { "Пепероні-X", "Квадро-Формаджо", "Карбонара-99", "Гаваї-Ультра", "Діавола-Prime" };
-                try
-                {
-                    PizzaAsteroid asteroid = new(
-                        name: names[rand.Next(names.Length)] + "-" + rand.Next(10, 999),
-                        crust: (CrustType)rand.Next(1, 5),
-                        diameterKm: Math.Round(rand.NextDouble() * 99 + 1, 2),
-                        temperatureCelsius: rand.Next(-200, 350),
-                        hasExtraCheese: rand.Next(2) == 1,
-                        discoveryDate: DateTime.Now.AddDays(-rand.Next(1, 5000))
-                    );
+                string[] baseNames = { "Пепероні-X", "Квадро-Формаджо", "Карбонара-99", "Гаваї-Ультра", "Діавола-Prime" };
+                string genName = baseNames[rand.Next(baseNames.Length)] + "-" + rand.Next(10, 999);
+                CrustType genCrust = (CrustType)rand.Next(1, 5);
+                double genDiameter = Math.Round(rand.NextDouble() * 90 + 5, 2);
+                int genTemp = rand.Next(-150, 250);
+                bool genCheese = rand.Next(2) == 1;
+                DateTime genDate = DateTime.Now.Date.AddDays(-rand.Next(10, 4000));
 
-                    Asteroids.Add(asteroid);
-                    Console.WriteLine($"Успіх! Автоматично згенеровано та додано: '{asteroid.Name}'.");
-                }
-                catch (Exception ex)
+                int ctorIndex = rand.Next(1, 5);
+                PizzaAsteroid newObj;
+
+                switch (ctorIndex)
                 {
-                    Console.WriteLine($"Помилка при автогенерації: {ex.Message}");
+                    case 1:
+                        newObj = new PizzaAsteroid
+                        {
+                            Name = genName,
+                            Crust = genCrust,
+                            DiameterKm = genDiameter
+                        };
+                        Console.WriteLine("[Повідомлення конструктора]: Спрацював конструктор без параметрів PizzaAsteroid() з ініціалізатором об'єкта.");
+                        break;
+                    case 2:
+                        newObj = new PizzaAsteroid(genName, genCrust, genDiameter);
+                        Console.WriteLine("[Повідомлення конструктора]: Спрацював конструктор із 3 параметрами PizzaAsteroid(name, crust, diameterKm).");
+                        break;
+                    case 3:
+                        newObj = new PizzaAsteroid(genName, genCrust, genDiameter, genTemp, genCheese);
+                        Console.WriteLine("[Повідомлення конструктора]: Спрацював конструктор із 5 параметрами PizzaAsteroid(name, crust, diameter, temp, cheese) через ланцюжок this(...).");
+                        break;
+                    default:
+                        newObj = new PizzaAsteroid(genName, genCrust, genDiameter, genTemp, genCheese, genDate, "Сирний Спешл");
+                        Console.WriteLine("[Повідомлення конструктора]: Спрацював повний перевантажений конструктор із 7 параметрами.");
+                        break;
                 }
+
+                Asteroids.Add(newObj);
+                Console.WriteLine($"Успіх! Автоматично згенеровано та додано: '{newObj.Name}'.");
             }
             else if (mode == "3")
             {
-                PizzaAsteroid defaultAsteroid = new();
-                Asteroids.Add(defaultAsteroid);
+                PizzaAsteroid initAsteroid = new PizzaAsteroid
+                {
+                    Name = "Класичний-Базовий",
+                    Crust = CrustType.CheeseStuffed,
+                    SauceType = "Часниковий Ранч",
+                    DiameterKm = 42.5,
+                    TemperatureCelsius = 60,
+                    HasExtraCheese = true
+                };
 
-                Console.WriteLine($"Успіх! Створено об'єкт за замовчуванням:");
-                Console.WriteLine($"Назва: {defaultAsteroid.Name}");
-                Console.WriteLine($"Бортик: {defaultAsteroid.Crust}");
-                Console.WriteLine($"Діаметр: {defaultAsteroid.DiameterKm} км");
-                Console.WriteLine($"Температура: {defaultAsteroid.TemperatureCelsius} °C");
-                Console.WriteLine($"Соус: {defaultAsteroid.SauceType}");
-                Console.WriteLine($"Об'єм: {defaultAsteroid.EstimatedVolumeKm3} км³");
+                Asteroids.Add(initAsteroid);
+                Console.WriteLine("[Повідомлення конструктора]: Спрацював конструктор без параметрів PizzaAsteroid() разом із блоком ініціалізатора { ... }.");
+                Console.WriteLine($"Успіх! Додано об'єкт '{initAsteroid.Name}'.");
             }
             else
             {
@@ -213,50 +242,93 @@ namespace PizzaAsteroidApp
             }
         }
 
-        private static bool ReadValidatedBool(string prompt)
+        private static void DemonstrateBehavior()
         {
-            while (true)
+            if (Asteroids.Count == 0)
             {
-                Console.Write(prompt);
-                string input = Console.ReadLine()!.Trim().ToLower();
-                if (input == "1" || input == "так" || input == "true") return true;
-                if (input == "0" || input == "ні" || input == "false") return false;
-                Console.WriteLine("Помилка! Введіть 1/так або 0/ні.");
-            }
-        }
-
-        private static int ReadPositiveInt(string prompt)
-        {
-            while (true)
-            {
-                Console.Write(prompt);
-                if (int.TryParse(Console.ReadLine(), out int n) && n > 0)
-                {
-                    return n;
-                }
-                Console.WriteLine("Помилка! Число повинно бути цілим і більшим за нуль.");
-            }
-        }
-
-        private static void PrintTable(List<PizzaAsteroid> list, string title)
-        {
-            if (list == null || list.Count == 0)
-            {
-                Console.WriteLine("Жодного об'єкта не знайдено.");
+                Console.WriteLine("Немає об'єктів для виклику методів.");
                 return;
             }
 
-            Console.WriteLine($"\n{title}");
-            Console.WriteLine(new string('-', 135));
-            Console.WriteLine($"| {"#",-3} | {"Назва",-18} | {"Бортик",-14} | {"Соус",-16} | {"Діаметр",-9} | {"Об'єм (км³)",-12} | {"T (°C)",-7} | {"Сир+",-6} | {"Відкрито",-10} |");
-            Console.WriteLine(new string('-', 135));
-
-            for (int i = 0; i < list.Count; i++)
+            PrintTable(Asteroids, "Оберіть астероїд для демонстрації");
+            Console.Write($"Введіть порядковий номер об'єкта (1..{Asteroids.Count}): ");
+            if (!int.TryParse(Console.ReadLine(), out int idx) || idx < 1 || idx > Asteroids.Count)
             {
-                var a = list[i];
-                Console.WriteLine($"| {i + 1,-3} | {a.Name,-18} | {a.Crust,-14} | {a.SauceType,-16} | {a.DiameterKm,-9:F2} | {a.EstimatedVolumeKm3,-12:F2} | {a.TemperatureCelsius,-7} | {(a.HasExtraCheese ? "Так" : "Ні"),-6} | {a.DiscoveryDate,-10:dd.MM.yyyy} |");
+                Console.WriteLine("Помилка! Некоректний номер.");
+                return;
             }
-            Console.WriteLine(new string('-', 135));
+
+            PizzaAsteroid target = Asteroids[idx - 1];
+
+            Console.WriteLine($"\nОберіть дію для астероїда '{target.Name}':");
+            Console.WriteLine("1 – Нагріти астероїд (Демонстрація ПЕРЕВАНТАЖЕНИХ версій HeatUp)");
+            Console.WriteLine("2 – Розрізати астероїд на шматки (Slice)");
+            Console.WriteLine("3 – Створити зіткнення з планетою (CollideWithTarget)");
+            Console.Write(">");
+
+            switch (Console.ReadLine()!.Trim())
+            {
+                case "1":
+                    Console.WriteLine("\nОберіть сигнатуру виклику перевантаженого методу HeatUp:");
+                    Console.WriteLine("1) HeatUp(int degrees) — звичайний нагрів");
+                    Console.WriteLine("2) HeatUp(int degrees, string heatSource) — нагрів із зазначенням космічного джерела");
+                    Console.WriteLine("3) HeatUp(double factor) — інтенсивний імпульсний нагрів через множник");
+                    Console.Write(">");
+                    string heatChoice = Console.ReadLine()!.Trim();
+
+                    if (heatChoice == "1")
+                    {
+                        Console.Write("Введіть градуси нагріву (int): ");
+                        if (int.TryParse(Console.ReadLine(), out int deg)) target.HeatUp(deg);
+                        else Console.WriteLine("Помилка! Некоректне значення.");
+                    }
+                    else if (heatChoice == "2")
+                    {
+                        Console.Write("Введіть градуси нагріву (int): ");
+                        if (int.TryParse(Console.ReadLine(), out int deg))
+                        {
+                            Console.Write("Введіть назву джерела (наприклад, 'Спалах супернової', 'Лазер шатла'): ");
+                            string src = Console.ReadLine()!;
+                            target.HeatUp(deg, src);
+                        }
+                        else Console.WriteLine("Помилка! Некоректне значення.");
+                    }
+                    else if (heatChoice == "3")
+                    {
+                        Console.Write("Введіть коефіцієнт нагріву (double > 1.0, наприклад 1.5): ");
+                        string raw = Console.ReadLine()!.Replace(',', '.');
+                        if (double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out double factor))
+                        {
+                            target.HeatUp(factor);
+                        }
+                        else Console.WriteLine("Помилка! Некоректне дійсне число.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Помилка! Невідома сигнатура методу.");
+                    }
+                    break;
+
+                case "2":
+                    Console.Write("На скільки частин розрізати (>= 2)?: ");
+                    if (int.TryParse(Console.ReadLine(), out int slices))
+                    {
+                        try { target.Slice(slices); }
+                        catch (ArgumentException ex) { Console.WriteLine($"Помилка! {ex.Message}"); }
+                    }
+                    else Console.WriteLine("Помилка! Введіть ціле число.");
+                    break;
+
+                case "3":
+                    Console.Write("Введіть назву планети або супутника: ");
+                    string planet = Console.ReadLine()!.Trim();
+                    Console.WriteLine(target.CollideWithTarget(string.IsNullOrWhiteSpace(planet) ? "Марс" : planet));
+                    break;
+
+                default:
+                    Console.WriteLine("Помилка! Невідомий метод.");
+                    break;
+            }
         }
 
         private static void SearchAsteroids()
@@ -301,72 +373,6 @@ namespace PizzaAsteroidApp
             }
 
             PrintTable(results, "Результати пошуку");
-        }
-
-        private static void DemonstrateBehavior()
-        {
-            if (Asteroids.Count == 0)
-            {
-                Console.WriteLine("Немає об'єктів для виклику методів.");
-                return;
-            }
-
-            PrintTable(Asteroids, "Оберіть астероїд для демонстрації");
-            Console.Write($"Введіть порядковий номер об'єкта (1..{Asteroids.Count}): ");
-            if (!int.TryParse(Console.ReadLine(), out int idx) || idx < 1 || idx > Asteroids.Count)
-            {
-                Console.WriteLine("Помилка! Некоректний номер.");
-                return;
-            }
-
-            PizzaAsteroid target = Asteroids[idx - 1];
-
-            Console.WriteLine($"\nОберіть дію для астероїда '{target.Name}':");
-            Console.WriteLine("1 – Нагріти астероїд (HeatUp)");
-            Console.WriteLine("2 – Розрізати астероїд на шматки (Slice)");
-            Console.WriteLine("3 – Створити зіткнення з планетою (CollideWithTarget)");
-            Console.Write(">");
-
-            switch (Console.ReadLine()!.Trim())
-            {
-                case "1":
-                    Console.Write("На скільки градусів підняти температуру?: ");
-                    if (int.TryParse(Console.ReadLine(), out int deg))
-                    {
-                        target.HeatUp(deg);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Помилка! Некоректне число.");
-                    }
-                    break;
-                case "2":
-                    Console.Write("На скільки частин розрізати (>= 2)?: ");
-                    if (int.TryParse(Console.ReadLine(), out int slices))
-                    {
-                        try
-                        {
-                            target.Slice(slices);
-                        }
-                        catch (ArgumentException ex)
-                        {
-                            Console.WriteLine($"Помилка! {ex.Message}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Помилка! Введіть ціле число.");
-                    }
-                    break;
-                case "3":
-                    Console.Write("Введіть назву планети або супутника: ");
-                    string planet = Console.ReadLine()!.Trim();
-                    Console.WriteLine(target.CollideWithTarget(string.IsNullOrWhiteSpace(planet) ? "Марс" : planet));
-                    break;
-                default:
-                    Console.WriteLine("Помилка! Невідомий метод.");
-                    break;
-            }
         }
 
         private static void DeleteAsteroidMenu()
@@ -417,6 +423,52 @@ namespace PizzaAsteroidApp
             {
                 Console.WriteLine("Помилка! Некоректний вибір.");
             }
+        }
+
+        private static bool ReadValidatedBool(string prompt)
+        {
+            while (true)
+            {
+                Console.Write(prompt);
+                string input = Console.ReadLine()!.Trim().ToLower();
+                if (input == "1" || input == "так" || input == "true") return true;
+                if (input == "0" || input == "ні" || input == "false") return false;
+                Console.WriteLine("Помилка! Введіть 1/так або 0/ні.");
+            }
+        }
+
+        private static int ReadPositiveInt(string prompt)
+        {
+            while (true)
+            {
+                Console.Write(prompt);
+                if (int.TryParse(Console.ReadLine(), out int n) && n > 0)
+                {
+                    return n;
+                }
+                Console.WriteLine("Помилка! Число повинно бути цілим і більшим за нуль.");
+            }
+        }
+
+        private static void PrintTable(List<PizzaAsteroid> list, string title)
+        {
+            if (list == null || list.Count == 0)
+            {
+                Console.WriteLine("Жодного об'єкта не знайдено.");
+                return;
+            }
+
+            Console.WriteLine($"\n{title}");
+            Console.WriteLine(new string('-', 135));
+            Console.WriteLine($"| {"#",-3} | {"Назва",-18} | {"Бортик",-14} | {"Соус",-16} | {"Діаметр",-9} | {"Об'єм (км³)",-12} | {"T (°C)",-7} | {"Сир+",-6} | {"Відкрито",-10} |");
+            Console.WriteLine(new string('-', 135));
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                var a = list[i];
+                Console.WriteLine($"| {i + 1,-3} | {a.Name,-18} | {a.Crust,-14} | {a.SauceType,-16} | {a.DiameterKm,-9:F2} | {a.EstimatedVolumeKm3,-12:F2} | {a.TemperatureCelsius,-7} | {(a.HasExtraCheese ? "Так" : "Ні"),-6} | {a.DiscoveryDate,-10:dd.MM.yyyy} |");
+            }
+            Console.WriteLine(new string('-', 135));
         }
     }
 }

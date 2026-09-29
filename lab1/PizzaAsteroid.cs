@@ -4,20 +4,18 @@ namespace PizzaAsteroidApp
 {
     public class PizzaAsteroid
     {
-        private string _name = "Астероїд";
+        private string _name = "Астероїд-За замовчуванням";
         private CrustType _crust;
         private double _diameterKm;
         private int _temperatureCelsius;
         private DateTime _discoveryDate;
 
         public string SauceType { get; set; } = "Томатний Класик";
+        public bool HasExtraCheese { get; set; }
 
         public string Name
         {
-            get
-            {
-                return _name;
-            }
+            get => _name;
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
@@ -36,10 +34,7 @@ namespace PizzaAsteroidApp
 
         public CrustType Crust
         {
-            get
-            {
-                return _crust;
-            }
+            get => _crust;
             set
             {
                 if (!Enum.IsDefined(typeof(CrustType), value))
@@ -50,10 +45,7 @@ namespace PizzaAsteroidApp
 
         public double DiameterKm
         {
-            get
-            {
-                return _diameterKm;
-            }
+            get => _diameterKm;
             set
             {
                 if (value < 0.1 || value > 1000.0)
@@ -64,10 +56,7 @@ namespace PizzaAsteroidApp
 
         public int TemperatureCelsius
         {
-            get
-            {
-                return _temperatureCelsius;
-            }
+            get => _temperatureCelsius;
             set
             {
                 if (value < -273 || value > 500)
@@ -76,17 +65,12 @@ namespace PizzaAsteroidApp
             }
         }
 
-        public bool HasExtraCheese { get; set; }
-
         public DateTime DiscoveryDate
         {
-            get
-            {
-                return _discoveryDate;
-            }
+            get => _discoveryDate;
             private set
             {
-                DateTime minDate = new DateTime(1990, 1, 1);
+                DateTime minDate = new(1990, 1, 1);
                 if (value < minDate || value > DateTime.Now.Date.AddDays(1))
                     throw new ArgumentOutOfRangeException(nameof(value), "Дата відкриття має бути в межах від 01.01.1990 до сьогодення.");
                 _discoveryDate = value.Date;
@@ -99,10 +83,11 @@ namespace PizzaAsteroidApp
             {
                 double radius = _diameterKm / 2.0;
                 double volume = (4.0 / 3.0) * Math.PI * Math.Pow(radius, 3);
-
                 return volume < 0.01 ? Math.Round(volume, 5) : Math.Round(volume, 2);
             }
         }
+
+        // overload consnstructor
 
         public PizzaAsteroid()
         {
@@ -112,13 +97,26 @@ namespace PizzaAsteroidApp
             DiscoveryDate = DateTime.Now.Date;
         }
 
-        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese, DateTime discoveryDate, string sauce = "Томатний Класик")
+        public PizzaAsteroid(string name, CrustType crust, double diameterKm)
         {
             Name = name;
             Crust = crust;
             DiameterKm = diameterKm;
+            TemperatureCelsius = -40;
+            HasExtraCheese = false;
+            DiscoveryDate = DateTime.Now.Date;
+        }
+
+        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese)
+            : this(name, crust, diameterKm)
+        {
             TemperatureCelsius = temperatureCelsius;
             HasExtraCheese = hasExtraCheese;
+        }
+
+        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese, DateTime discoveryDate, string sauce = "Томатний Класик")
+            : this(name, crust, diameterKm, temperatureCelsius, hasExtraCheese)
+        {
             SauceType = sauce;
             SetDiscoveryDate(discoveryDate);
         }
@@ -128,6 +126,8 @@ namespace PizzaAsteroidApp
             DiscoveryDate = date;
         }
 
+        // overload HeatUp
+
         public void HeatUp(int degrees)
         {
             if (degrees <= 0)
@@ -136,11 +136,28 @@ namespace PizzaAsteroidApp
                 return;
             }
 
-            int oldTemp = TemperatureCelsius;
-            int targetTemp = oldTemp + degrees;
-
+            int targetTemp = TemperatureCelsius + degrees;
             TemperatureCelsius = ClampTemperature(targetTemp);
             RecalculateThermalState();
+        }
+
+        public void HeatUp(int degrees, string heatSource)
+        {
+            Console.WriteLine($"[Нагрів]: Астероїд '{Name}' піддано опроміненню від джерела: \"{heatSource}\".");
+            HeatUp(degrees);
+        }
+
+        public void HeatUp(double factor)
+        {
+            if (factor <= 1.0)
+            {
+                Console.WriteLine("Коефіцієнт нагріву має бути більшим за 1.0.");
+                return;
+            }
+
+            int boost = (int)Math.Round(Math.Abs(TemperatureCelsius == 0 ? 25 : TemperatureCelsius) * (factor - 1.0));
+            Console.WriteLine($"[Інтенсивний нагрів]: Застосовано коефіцієнт x{factor:F1} (підйом на +{boost}°C).");
+            HeatUp(Math.Max(boost, 5));
         }
 
         public void Slice(int parts)
@@ -175,13 +192,9 @@ namespace PizzaAsteroidApp
         private void RecalculateThermalState()
         {
             if (TemperatureCelsius > 180)
-            {
                 Console.WriteLine($"[Термодатчик]: Сир на астероїді '{Name}' плавиться і булькає! Поточна T = {TemperatureCelsius}°C.");
-            }
             else
-            {
                 Console.WriteLine($"[Термодатчик]: Астероїд нагріто до {TemperatureCelsius}°C. Бортик залишається хрустким.");
-            }
         }
 
         private void ApplySliceDivision(int parts)
@@ -192,7 +205,6 @@ namespace PizzaAsteroidApp
         private double CalculateImpactEnergy()
         {
             double energy = EstimatedVolumeKm3 * 1.75;
-
             return energy < 0.01 ? Math.Round(energy, 4) : Math.Round(energy, 2);
         }
     }
