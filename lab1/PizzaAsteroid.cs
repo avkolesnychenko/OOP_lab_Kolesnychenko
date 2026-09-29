@@ -1,65 +1,191 @@
-﻿using System;
+﻿using System.Text.RegularExpressions;
 
 namespace PizzaAsteroidApp
 {
     public class PizzaAsteroid
     {
-        public string Name;
-        public CrustType Crust;
-        public double DiameterKm;
-        public int TemperatureCelsius;
-        public bool HasExtraCheese;
+        private string _name = "Астероїд";
+        private CrustType _crust;
+        private double _diameterKm;
+        private int _temperatureCelsius;
+        private DateTime _discoveryDate;
 
-        private DateTime discoveryDate;
+        public string SauceType { get; set; } = "Томатний Класик";
 
-        public void SetDiscoveryDate(DateTime date)
+        public string Name
         {
-            discoveryDate = date;
+            get
+            {
+                return _name;
+            }
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Назва астероїда не може бути порожньою.", nameof(value));
+
+                string trimmed = value.Trim();
+                if (trimmed.Length < 3 || trimmed.Length > 20)
+                    throw new ArgumentException("Довжина назви має бути від 3 до 20 символів.", nameof(value));
+
+                if (!Regex.IsMatch(trimmed, @"^[a-zA-Zа-яА-ЯіІїЇєЄ0-9\s\-]+$"))
+                    throw new ArgumentException("Назва містить неприпустимі спецсимволи.", nameof(value));
+
+                _name = trimmed;
+            }
         }
 
-        public DateTime GetDiscoveryDate()
+        public CrustType Crust
         {
-            return discoveryDate;
+            get
+            {
+                return _crust;
+            }
+            set
+            {
+                if (!Enum.IsDefined(typeof(CrustType), value))
+                    throw new ArgumentException("Невідомий тип бортика.", nameof(value));
+                _crust = value;
+            }
         }
 
-        public PizzaAsteroid() 
-        { 
-            Name = string.Empty;
+        public double DiameterKm
+        {
+            get
+            {
+                return _diameterKm;
+            }
+            set
+            {
+                if (value < 0.1 || value > 1000.0)
+                    throw new ArgumentOutOfRangeException(nameof(value), "Діаметр повинен бути в межах від 0.1 до 1000.0 км.");
+                _diameterKm = Math.Round(value, 2);
+            }
         }
-        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese, DateTime discoveryDate)
+
+        public int TemperatureCelsius
+        {
+            get
+            {
+                return _temperatureCelsius;
+            }
+            set
+            {
+                if (value < -273 || value > 500)
+                    throw new ArgumentOutOfRangeException(nameof(value), "Температура повинна бути від -273°C до 500°C.");
+                _temperatureCelsius = value;
+            }
+        }
+
+        public bool HasExtraCheese { get; set; }
+
+        public DateTime DiscoveryDate
+        {
+            get
+            {
+                return _discoveryDate;
+            }
+            private set
+            {
+                DateTime minDate = new DateTime(1990, 1, 1);
+                if (value < minDate || value > DateTime.Now.Date.AddDays(1))
+                    throw new ArgumentOutOfRangeException(nameof(value), "Дата відкриття має бути в межах від 01.01.1990 до сьогодення.");
+                _discoveryDate = value.Date;
+            }
+        }
+
+        public double EstimatedVolumeKm3
+        {
+            get
+            {
+                double radius = _diameterKm / 2.0;
+                return Math.Round((4.0 / 3.0) * Math.PI * Math.Pow(radius, 3), 2);
+            }
+        }
+
+        public PizzaAsteroid()
+        {
+            Crust = CrustType.Classic;
+            DiameterKm = 10.0;
+            TemperatureCelsius = -50;
+            DiscoveryDate = DateTime.Now.Date;
+        }
+
+        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese, DateTime discoveryDate, string sauce = "Томатний Класик")
         {
             Name = name;
             Crust = crust;
             DiameterKm = diameterKm;
             TemperatureCelsius = temperatureCelsius;
             HasExtraCheese = hasExtraCheese;
-            this.discoveryDate = discoveryDate;
+            SauceType = sauce;
+            SetDiscoveryDate(discoveryDate);
         }
 
-        public void HeatUp(int temperature)
+        public void SetDiscoveryDate(DateTime date)
         {
-            TemperatureCelsius += temperature;
-            Console.WriteLine($"Астероїд '{Name}' нагрівся на {temperature}°C. Поточна температура: {TemperatureCelsius}°C.");
-            if (TemperatureCelsius > 60 && HasExtraCheese)
-            {
-                Console.WriteLine("УВАГА! Сир на поверхні розплавився і утворив скоринку!");
-            }
+            DiscoveryDate = date;
         }
 
-        public void Slice(int slices)
+        public void HeatUp(int degrees)
         {
-            if (slices <= 1)
+            if (degrees <= 0)
             {
-                Console.WriteLine($"[!] Астероїд '{Name}' неможливо нарізати на {slices} шматочків.");
+                Console.WriteLine("Значення нагріву має бути додатним.");
                 return;
             }
-            DiameterKm /= Math.Sqrt(slices);
-            Console.WriteLine($"[!] Астероїд '{Name}' розділено на {slices} шматків! Новий діаметр кожного шматка: {DiameterKm:F2} км.");
+
+            int oldTemp = TemperatureCelsius;
+            int targetTemp = oldTemp + degrees;
+
+            TemperatureCelsius = ClampTemperature(targetTemp);
+            RecalculateThermalState();
         }
 
-        public string CollideWithTarget(string targetName)
+        public void Slice(int parts)
         {
-            return $"УВАГА! ЗІТКНЕННЯ!!! '{Name}' врізається в об'єкт '{targetName}', покриваючи його товстим шаром соусу, астероїд розлітається на обломки типу {Crust}!";
+            if (parts < 2)
+                throw new ArgumentException("Кількість шматків має бути не менше 2.", nameof(parts));
+
+            ApplySliceDivision(parts);
+            Console.WriteLine($"Астероїд '{Name}' успішно нарізано на {parts} шматків!");
+        }
+
+        public string CollideWithTarget(string targetPlanet)
+        {
+            double impactEnergyMegatons = CalculateImpactEnergy();
+            return $"Астероїд '{Name}' зіткнувся з об'єктом '{targetPlanet}'. Енергія удару: {impactEnergyMegatons:F2} Мт ТНТ. Соус розлетівся по орбіті!";
+        }
+
+        private int ClampTemperature(int temp)
+        {
+            if (temp > 500)
+            {
+                Console.WriteLine("Увага: Досягнуто максимальної температури випікання (500°C)!");
+                return 500;
+            }
+            return temp;
+        }
+
+        private void RecalculateThermalState()
+        {
+            if (TemperatureCelsius > 180)
+            {
+                Console.WriteLine($"[Термодатчик]: Сир на астероїді '{Name}' плавиться і булькає! Поточна T = {TemperatureCelsius}°C.");
+            }
+            else
+            {
+                Console.WriteLine($"[Термодатчик]: Астероїд нагріто до {TemperatureCelsius}°C. Бортик залишається хрустким.");
+            }
+        }
+
+        private void ApplySliceDivision(int parts)
+        {
+            _diameterKm = Math.Round(_diameterKm / Math.Sqrt(parts), 2);
+        }
+
+        private double CalculateImpactEnergy()
+        {
+            return EstimatedVolumeKm3 * 1.75;
         }
     }
 }
