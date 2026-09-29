@@ -414,5 +414,51 @@ namespace PizzaAsteroidApp
             }
             Console.WriteLine(new string('-', 135));
         }
+
+        private static bool ReadValidatedBool(string prompt)
+        {
+            while (true)
+            {
+                Console.Write(prompt);
+                string input = Console.ReadLine()!.Trim().ToLower();
+                if (input is "1" or "так" or "true") return true;
+                if (input is "0" or "ні" or "false") return false;
+                Console.WriteLine("Помилка! Введіть 1/так або 0/ні.");
+            }
+        }
+
+        private static int ReadPositiveInt(string prompt)
+        {
+            while (true)
+            {
+                Console.Write(prompt);
+                if (int.TryParse(Console.ReadLine(), out int n) && n > 0)
+                {
+                    return n;
+                }
+                Console.WriteLine("Помилка! Число повинно бути цілим і більшим за нуль.");
+            }
+        }
+
+        private static void PrintTable(List<PizzaAsteroid> list, string title)
+        {
+            if (list == null || list.Count == 0)
+            {
+                Console.WriteLine("Жодного об'єкта не знайдено.");
+                return;
+            }
+
+            Console.WriteLine($"\n{title}");
+            Console.WriteLine(new string('-', 135));
+            Console.WriteLine($"| {"#",-3} | {"Назва",-18} | {"Бортик",-14} | {"Соус",-16} | {"Діаметр",-9} | {"Об'єм (км³)",-12} | {"T (°C)",-7} | {"Сир+",-6} | {"Відкрито",-10} |");
+            Console.WriteLine(new string('-', 135));
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                var a = list[i];
+                Console.WriteLine($"| {i + 1,-3} | {a.Name,-18} | {a.Crust,-14} | {a.SauceType,-16} | {a.DiameterKm,-9:F2} | {a.EstimatedVolumeKm3,-12:F2} | {a.TemperatureCelsius,-7} | {(a.HasExtraCheese ? "Так" : "Ні"),-6} | {a.DiscoveryDate,-10:dd.MM.yyyy} |");
+            }
+            Console.WriteLine(new string('-', 135));
+        }
     }
 }
