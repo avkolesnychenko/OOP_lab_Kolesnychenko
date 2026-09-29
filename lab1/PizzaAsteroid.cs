@@ -98,7 +98,9 @@ namespace PizzaAsteroidApp
             get
             {
                 double radius = _diameterKm / 2.0;
-                return Math.Round((4.0 / 3.0) * Math.PI * Math.Pow(radius, 3), 2);
+                double volume = (4.0 / 3.0) * Math.PI * Math.Pow(radius, 3);
+
+                return volume < 0.01 ? Math.Round(volume, 5) : Math.Round(volume, 2);
             }
         }
 
@@ -153,7 +155,11 @@ namespace PizzaAsteroidApp
         public string CollideWithTarget(string targetPlanet)
         {
             double impactEnergyMegatons = CalculateImpactEnergy();
-            return $"Астероїд '{Name}' зіткнувся з об'єктом '{targetPlanet}'. Енергія удару: {impactEnergyMegatons:F2} Мт ТНТ. Соус розлетівся по орбіті!";
+            string energyStr = impactEnergyMegatons < 0.01
+                ? impactEnergyMegatons.ToString("0.0000")
+                : impactEnergyMegatons.ToString("0.00");
+
+            return $"Астероїд '{Name}' зіткнувся з об'єктом '{targetPlanet}'. Енергія удару: {energyStr} Мт ТНТ. Соус розлетівся по орбіті!";
         }
 
         private int ClampTemperature(int temp)
@@ -185,7 +191,9 @@ namespace PizzaAsteroidApp
 
         private double CalculateImpactEnergy()
         {
-            return EstimatedVolumeKm3 * 1.75;
+            double energy = EstimatedVolumeKm3 * 1.75;
+
+            return energy < 0.01 ? Math.Round(energy, 4) : Math.Round(energy, 2);
         }
     }
 }
