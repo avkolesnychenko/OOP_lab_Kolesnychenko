@@ -138,7 +138,6 @@ namespace PizzaAsteroidApp
             if (string.IsNullOrWhiteSpace(heatSource))
                 throw new ArgumentException("Джерело тепла не може бути порожнім.", nameof(heatSource));
 
-            Console.WriteLine($"[Джерело тепла]: {heatSource}");
             HeatUp(degrees);
         }
 
