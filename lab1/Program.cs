@@ -96,7 +96,8 @@ namespace PizzaAsteroidApp
                         PizzaAsteroid asteroid = new(name, crust, diameter, tempC, extraCheese, date, sauce);
                         Asteroids.Add(asteroid);
 
-                        Console.WriteLine("[Конструктор]: Спрацював повний конструктор PizzaAsteroid(name, crust, diameterKm, temp, cheese, date, sauce).");
+                        Console.WriteLine("[Конструктор]: Спрацював повний конструктор PizzaAsteroid(name, crust, diameterKm, temp, cheese, date, sauce), " +
+                                          "який через : this(...) викликав 5-параметричний, а той – 3-параметричний конструктор.");
                         Console.WriteLine($"Успіх! Астероїд '{asteroid.Name}' успішно створено!");
                         break;
                     }
@@ -133,7 +134,7 @@ namespace PizzaAsteroidApp
                             Crust = genCrust,
                             DiameterKm = genDiameter
                         };
-                        Console.WriteLine("[Конструктор]: Спрацював конструктор без параметрів PizzaAsteroid().");
+                        Console.WriteLine("[Конструктор]: Спрацював конструктор без параметрів PizzaAsteroid() разом з ініціалізатором об'єкта { Name, Crust, DiameterKm }.");
                         break;
                     case 2:
                         newObj = new PizzaAsteroid(genName, genCrust, genDiameter);
@@ -141,11 +142,11 @@ namespace PizzaAsteroidApp
                         break;
                     case 3:
                         newObj = new PizzaAsteroid(genName, genCrust, genDiameter, genTemp, genCheese);
-                        Console.WriteLine("[Конструктор]: Спрацював 5-параметричний конструктор через ланцюжок : this(...).");
+                        Console.WriteLine("[Конструктор]: Спрацював 5-параметричний конструктор PizzaAsteroid(name, crust, diameterKm, temp, cheese), який через : this(...) викликав 3-параметричний.");
                         break;
                     default:
                         newObj = new PizzaAsteroid(genName, genCrust, genDiameter, genTemp, genCheese, genDate, "Грибний Соус");
-                        Console.WriteLine("[Конструктор]: Спрацював повний перевантажений конструктор.");
+                        Console.WriteLine("[Конструктор]: Спрацював повний 7-параметричний конструктор, який через : this(...) викликав 5-параметричний, а той – 3-параметричний.");
                         break;
                 }
 
@@ -165,7 +166,7 @@ namespace PizzaAsteroidApp
                 };
 
                 Asteroids.Add(defaultInit);
-                Console.WriteLine("[Конструктор]: Спрацював конструктор без параметрів разом.");
+                Console.WriteLine("[Конструктор]: Спрацював конструктор без параметрів PizzaAsteroid() разом з ініціалізатором об'єкта.");
                 Console.WriteLine($"Успіх! Створено об'єкт '{defaultInit.Name}'.");
             }
             else
@@ -201,6 +202,7 @@ namespace PizzaAsteroidApp
                     Console.WriteLine("3) HeatUp(double factor)");
                     Console.Write(">");
                     string choice = Console.ReadLine()!.Trim();
+                    int tempBefore = target.TemperatureCelsius;
 
                     try
                     {
@@ -208,21 +210,25 @@ namespace PizzaAsteroidApp
                         {
                             int deg = ReadInt("Введіть градуси нагріву (int): ");
                             target.HeatUp(deg);
-                            Console.WriteLine($"Успіх! Нова T = {target.TemperatureCelsius}°C.");
+                            Console.WriteLine("Викликано перевантаження: HeatUp(int degrees)");
+                            Console.WriteLine($"Успіх! T: {tempBefore}°C -> {target.TemperatureCelsius}°C.");
                         }
                         else if (choice == "2")
                         {
                             int deg = ReadInt("Введіть градуси нагріву (int): ");
                             Console.Write("Введіть назву джерела (наприклад, 'Сонячний спалах'): ");
                             string src = Console.ReadLine()!;
-                            target.HeatUp(deg, src);
-                            Console.WriteLine($"Успіх! Нова T = {target.TemperatureCelsius}°C.");
+                            string report = target.HeatUp(deg, src);
+                            Console.WriteLine("Викликано перевантаження: HeatUp(int degrees, string heatSource)");
+                            Console.WriteLine(report);
+                            Console.WriteLine($"Успіх! T: {tempBefore}°C -> {target.TemperatureCelsius}°C.");
                         }
                         else if (choice == "3")
                         {
-                            double factor = ReadDouble("Введіть коефіцієнт нагріву (double > 1.0, наприклад 1.5): ");
+                            double factor = ReadDouble("Введіть коефіцієнт нагріву (1.0 < k <= 10.0, наприклад 1.5): ");
                             target.HeatUp(factor);
-                            Console.WriteLine($"Успіх! Нова T = {target.TemperatureCelsius}°C.");
+                            Console.WriteLine("Викликано перевантаження: HeatUp(double factor)");
+                            Console.WriteLine($"Успіх! T: {tempBefore}°C -> {target.TemperatureCelsius}°C.");
                         }
                         else
                         {

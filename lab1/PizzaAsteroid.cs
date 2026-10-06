@@ -48,7 +48,7 @@ namespace PizzaAsteroidApp
             get => _diameterKm;
             set
             {
-                if (value < 0.1 || value > 1000.0)
+                if (double.IsNaN(value) || value < 0.1 || value > 1000.0)
                     throw new ArgumentOutOfRangeException(nameof(value), "Діаметр повинен бути в межах від 0.1 до 1000.0 км.");
                 _diameterKm = Math.Round(value, 2);
             }
@@ -100,7 +100,7 @@ namespace PizzaAsteroidApp
             Name = name;
             Crust = crust;
             DiameterKm = diameterKm;
-            TemperatureCelsius = -40;
+            TemperatureCelsius = -50;
             HasExtraCheese = false;
             DiscoveryDate = DateTime.Now.Date;
         }
@@ -130,21 +130,22 @@ namespace PizzaAsteroidApp
                 throw new ArgumentOutOfRangeException(nameof(degrees), "Значення нагріву має бути додатним.");
 
             int targetTemp = TemperatureCelsius + degrees;
-            TemperatureCelsius = targetTemp > 500 ? 500 : targetTemp;
+            TemperatureCelsius = ClampTemperature(targetTemp);
         }
 
-        public void HeatUp(int degrees, string heatSource)
+        public string HeatUp(int degrees, string heatSource)
         {
             if (string.IsNullOrWhiteSpace(heatSource))
                 throw new ArgumentException("Джерело тепла не може бути порожнім.", nameof(heatSource));
 
             HeatUp(degrees);
+            return $"Астероїд '{Name}' нагріто джерелом '{heatSource.Trim()}' на {degrees}°C.";
         }
 
         public void HeatUp(double factor)
         {
-            if (factor <= 1.0)
-                throw new ArgumentOutOfRangeException(nameof(factor), "Коефіцієнт нагріву повинен бути більшим за 1.0.");
+            if (double.IsNaN(factor) || factor <= 1.0 || factor > 10.0)
+                throw new ArgumentOutOfRangeException(nameof(factor), "Коефіцієнт нагріву повинен бути більшим за 1.0 і не більшим за 10.0.");
 
             int currentBase = TemperatureCelsius == 0 ? 20 : Math.Abs(TemperatureCelsius);
             int boost = Math.Max((int)Math.Round(currentBase * (factor - 1.0)), 5);
@@ -156,8 +157,7 @@ namespace PizzaAsteroidApp
             if (parts < 2)
                 throw new ArgumentException("Кількість шматків має бути не менше 2.", nameof(parts));
 
-            double newDiameter = _diameterKm / Math.Sqrt(parts);
-            DiameterKm = Math.Round(newDiameter, 2);
+            ApplySliceDivision(parts);
         }
 
         public string CollideWithTarget(string targetPlanet)
@@ -168,6 +168,17 @@ namespace PizzaAsteroidApp
                 : impactEnergyMegatons.ToString("0.00");
 
             return $"Астероїд '{Name}' зіткнувся з об'єктом '{targetPlanet}'. Енергія удару: {energyStr} Мт ТНТ. Соус розлетівся по орбіті!";
+        }
+
+        private int ClampTemperature(int temp)
+        {
+            return temp > 500 ? 500 : temp;
+        }
+
+        private void ApplySliceDivision(int parts)
+        {
+            double newDiameter = _diameterKm / Math.Sqrt(parts);
+            DiameterKm = Math.Round(newDiameter, 2);
         }
 
         private double CalculateImpactEnergy()
