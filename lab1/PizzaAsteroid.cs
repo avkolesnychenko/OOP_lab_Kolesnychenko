@@ -48,7 +48,7 @@ namespace PizzaAsteroidApp
             get => _diameterKm;
             set
             {
-                if (value < 0.1 || value > 1000.0)
+                if (double.IsNaN(value) || value < 0.1 || value > 1000.0)
                     throw new ArgumentOutOfRangeException(nameof(value), "Діаметр повинен бути в межах від 0.1 до 1000.0 км.");
                 _diameterKm = Math.Round(value, 2);
             }
@@ -95,13 +95,26 @@ namespace PizzaAsteroidApp
             DiscoveryDate = DateTime.Now.Date;
         }
 
-        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese, DateTime discoveryDate, string sauce = "Томатний Класик")
+        public PizzaAsteroid(string name, CrustType crust, double diameterKm)
         {
             Name = name;
             Crust = crust;
             DiameterKm = diameterKm;
+            TemperatureCelsius = -50;
+            HasExtraCheese = false;
+            DiscoveryDate = DateTime.Now.Date;
+        }
+
+        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese)
+            : this(name, crust, diameterKm)
+        {
             TemperatureCelsius = temperatureCelsius;
             HasExtraCheese = hasExtraCheese;
+        }
+
+        public PizzaAsteroid(string name, CrustType crust, double diameterKm, int temperatureCelsius, bool hasExtraCheese, DateTime discoveryDate, string sauce = "Томатний Класик")
+            : this(name, crust, diameterKm, temperatureCelsius, hasExtraCheese)
+        {
             SauceType = sauce;
             SetDiscoveryDate(discoveryDate);
         }
@@ -118,6 +131,25 @@ namespace PizzaAsteroidApp
 
             int targetTemp = TemperatureCelsius + degrees;
             TemperatureCelsius = ClampTemperature(targetTemp);
+        }
+
+        public string HeatUp(int degrees, string heatSource)
+        {
+            if (string.IsNullOrWhiteSpace(heatSource))
+                throw new ArgumentException("Джерело тепла не може бути порожнім.", nameof(heatSource));
+
+            HeatUp(degrees);
+            return $"Астероїд '{Name}' нагріто джерелом '{heatSource.Trim()}' на {degrees}°C.";
+        }
+
+        public void HeatUp(double factor)
+        {
+            if (double.IsNaN(factor) || factor <= 1.0 || factor > 10.0)
+                throw new ArgumentOutOfRangeException(nameof(factor), "Коефіцієнт нагріву повинен бути більшим за 1.0 і не більшим за 10.0.");
+
+            int currentBase = TemperatureCelsius == 0 ? 20 : Math.Abs(TemperatureCelsius);
+            int boost = Math.Max((int)Math.Round(currentBase * (factor - 1.0)), 5);
+            HeatUp(boost);
         }
 
         public void Slice(int parts)
