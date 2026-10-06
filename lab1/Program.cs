@@ -23,6 +23,7 @@ namespace PizzaAsteroidApp
                 Console.WriteLine("3 – Знайти об'єкт");
                 Console.WriteLine("4 – Продемонструвати поведінку");
                 Console.WriteLine("5 – Видалити об'єкт");
+                Console.WriteLine("6 – Продемонструвати static-методи");
                 Console.WriteLine("0 – Вийти з програми");
                 Console.Write(">");
 
@@ -36,6 +37,7 @@ namespace PizzaAsteroidApp
                         break;
                     case "2":
                         PrintTable(Asteroids, "Список усіх піцца-астероїдів");
+                        Console.WriteLine($"Усього коректно створено об'єктів PizzaAsteroid (PizzaAsteroid.CreatedCount): {PizzaAsteroid.CreatedCount}");
                         break;
                     case "3":
                         SearchAsteroids();
@@ -45,6 +47,9 @@ namespace PizzaAsteroidApp
                         break;
                     case "5":
                         DeleteAsteroidMenu();
+                        break;
+                    case "6":
+                        DemonstrateStaticMethods();
                         break;
                     case "0":
                         running = false;
@@ -66,9 +71,10 @@ namespace PizzaAsteroidApp
             }
 
             Console.WriteLine("Режим додавання:");
-            Console.WriteLine("1 - Ввести дані вручну");
-            Console.WriteLine("2 - Згенерувати випадковим конструктором");
+            Console.WriteLine("1 – Ввести дані вручну");
+            Console.WriteLine("2 – Згенерувати випадковим конструктором");
             Console.WriteLine("3 – Створити за замовчуванням");
+            Console.WriteLine("4 – Ввести рядком (TryParse)");
             Console.Write(">");
             string mode = Console.ReadLine()!.Trim();
 
@@ -96,8 +102,7 @@ namespace PizzaAsteroidApp
                         PizzaAsteroid asteroid = new(name, crust, diameter, tempC, extraCheese, date, sauce);
                         Asteroids.Add(asteroid);
 
-                        Console.WriteLine("[Конструктор]: Спрацював повний конструктор PizzaAsteroid(name, crust, diameterKm, temp, cheese, date, sauce), " +
-                                          "який через : this(...) викликав 5-параметричний, а той – 3-параметричний конструктор.");
+                        Console.WriteLine("[Конструктор]: Спрацював основний 7-параметричний конструктор PizzaAsteroid(name, crust, diameterKm, temp, cheese, date, sauce).");
                         Console.WriteLine($"Успіх! Астероїд '{asteroid.Name}' успішно створено!");
                         break;
                     }
@@ -134,19 +139,19 @@ namespace PizzaAsteroidApp
                             Crust = genCrust,
                             DiameterKm = genDiameter
                         };
-                        Console.WriteLine("[Конструктор]: Спрацював конструктор без параметрів PizzaAsteroid() разом з ініціалізатором об'єкта { Name, Crust, DiameterKm }.");
+                        Console.WriteLine("[Конструктор]: Спрацював конструктор без параметрів PizzaAsteroid() (через : this(...) викликав основний) разом з ініціалізатором об'єкта { Name, Crust, DiameterKm }.");
                         break;
                     case 2:
                         newObj = new PizzaAsteroid(genName, genCrust, genDiameter);
-                        Console.WriteLine("[Конструктор]: Спрацював скорочений конструктор PizzaAsteroid(name, crust, diameterKm).");
+                        Console.WriteLine("[Конструктор]: Спрацював скорочений конструктор PizzaAsteroid(name, crust, diameterKm), який через : this(...) викликав основний 7-параметричний.");
                         break;
                     case 3:
                         newObj = new PizzaAsteroid(genName, genCrust, genDiameter, genTemp, genCheese);
-                        Console.WriteLine("[Конструктор]: Спрацював 5-параметричний конструктор PizzaAsteroid(name, crust, diameterKm, temp, cheese), який через : this(...) викликав 3-параметричний.");
+                        Console.WriteLine("[Конструктор]: Спрацював 5-параметричний конструктор PizzaAsteroid(name, crust, diameterKm, temp, cheese), який через : this(...) викликав основний 7-параметричний.");
                         break;
                     default:
                         newObj = new PizzaAsteroid(genName, genCrust, genDiameter, genTemp, genCheese, genDate, "Грибний Соус");
-                        Console.WriteLine("[Конструктор]: Спрацював повний 7-параметричний конструктор, який через : this(...) викликав 5-параметричний, а той – 3-параметричний.");
+                        Console.WriteLine("[Конструктор]: Спрацював основний 7-параметричний конструктор.");
                         break;
                 }
 
@@ -169,10 +174,242 @@ namespace PizzaAsteroidApp
                 Console.WriteLine("[Конструктор]: Спрацював конструктор без параметрів PizzaAsteroid() разом з ініціалізатором об'єкта.");
                 Console.WriteLine($"Успіх! Створено об'єкт '{defaultInit.Name}'.");
             }
+            else if (mode == "4")
+            {
+                AddFromString();
+            }
             else
             {
                 Console.WriteLine("Помилка! Некоректний режим додавання.");
             }
+        }
+
+        private static void AddFromString()
+        {
+            PrintStringFormatHint();
+
+            while (true)
+            {
+                Console.Write("Введіть рядок (порожній рядок — скасувати): ");
+                string input = Console.ReadLine() ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    Console.WriteLine("Додавання скасовано.");
+                    return;
+                }
+
+                if (PizzaAsteroid.TryParse(input, out PizzaAsteroid? parsed) && parsed != null)
+                {
+                    Asteroids.Add(parsed);
+                    Console.WriteLine("[TryParse]: Рядок успішно перетворено на об'єкт.");
+                    Console.WriteLine($"Успіх! Астероїд '{parsed.Name}' додано. ToString(): {parsed}");
+                    return;
+                }
+
+                Console.WriteLine("[TryParse]: Не вдалося перетворити рядок на об'єкт (TryParse повернув false).");
+                Console.WriteLine("Перевірте формат і значення полів. Щоб побачити точну причину, скористайтеся пунктом 6 → Parse.\n");
+            }
+        }
+
+        private static void DemonstrateStaticMethods()
+        {
+            Console.WriteLine("Демонстрація static-членів класу PizzaAsteroid:");
+            Console.WriteLine("1 – Static-властивість ImpactEnergyFactor (переглянути / змінити)");
+            Console.WriteLine("2 – PizzaAsteroid.Parse(string)    (з повідомленням про помилку)");
+            Console.WriteLine("3 – PizzaAsteroid.TryParse(string, out obj)");
+            Console.WriteLine("4 – ToString() усіх об'єктів (формат, сумісний з Parse)");
+            Console.WriteLine("5 – PizzaAsteroid.Merge(a, b, name) — злиття двох астероїдів");
+            Console.WriteLine("6 – PizzaAsteroid.TotalVolume(list) — сумарний об'єм");
+            Console.Write(">");
+            string choice = Console.ReadLine()!.Trim();
+            Console.WriteLine();
+
+            switch (choice)
+            {
+                case "1":
+                    DemoImpactFactor();
+                    break;
+                case "2":
+                    DemoParse();
+                    break;
+                case "3":
+                    DemoTryParse();
+                    break;
+                case "4":
+                    DemoToString();
+                    break;
+                case "5":
+                    DemoMerge();
+                    break;
+                case "6":
+                    DemoTotalVolume();
+                    break;
+                default:
+                    Console.WriteLine("Помилка! Невідома опція.");
+                    break;
+            }
+        }
+
+        private static void DemoImpactFactor()
+        {
+            Console.WriteLine($"Поточне значення PizzaAsteroid.ImpactEnergyFactor = {PizzaAsteroid.ImpactEnergyFactor} Мт ТНТ / км³ (спільне для всіх астероїдів).");
+            if (!ReadValidatedBool("Змінити значення? (1/так, 0/ні): "))
+                return;
+
+            double newValue = ReadDouble("Введіть новий коефіцієнт (0.1 – 100.0): ");
+            try
+            {
+                double old = PizzaAsteroid.ImpactEnergyFactor;
+                PizzaAsteroid.ImpactEnergyFactor = newValue;
+                Console.WriteLine($"Успіх! ImpactEnergyFactor: {old} -> {PizzaAsteroid.ImpactEnergyFactor}.");
+                Console.WriteLine("Зміна вплине на CollideWithTarget() УСІХ астероїдів одночасно.");
+
+                if (Asteroids.Count > 0)
+                    Console.WriteLine("Приклад: " + Asteroids[0].CollideWithTarget("Марс"));
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                Console.WriteLine($"[Помилка]: {ex.Message}");
+            }
+        }
+
+        private static void DemoParse()
+        {
+            PrintStringFormatHint();
+            Console.Write("Введіть рядок для Parse: ");
+            string input = Console.ReadLine() ?? string.Empty;
+            int countBefore = PizzaAsteroid.CreatedCount;
+
+            try
+            {
+                PizzaAsteroid obj = PizzaAsteroid.Parse(input);
+                Console.WriteLine("Parse успішний! Отримано об'єкт:");
+                PrintTable([obj], "Результат Parse");
+
+                if (Asteroids.Count < _maxCapacity && ReadValidatedBool("Додати цей об'єкт до списку? (1/так, 0/ні): "))
+                {
+                    Asteroids.Add(obj);
+                    Console.WriteLine($"Об'єкт '{obj.Name}' додано до списку.");
+                }
+            }
+            catch (FormatException ex)
+            {
+                Console.WriteLine($"[FormatException]: {ex.Message}");
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                Console.WriteLine($"[ArgumentOutOfRangeException]: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"[{ex.GetType().Name}]: {ex.Message}");
+            }
+
+            Console.WriteLine($"CreatedCount: {countBefore} -> {PizzaAsteroid.CreatedCount}");
+        }
+
+        private static void DemoTryParse()
+        {
+            PrintStringFormatHint();
+            Console.Write("Введіть рядок для TryParse: ");
+            string input = Console.ReadLine() ?? string.Empty;
+
+            bool ok = PizzaAsteroid.TryParse(input, out PizzaAsteroid? obj);
+            Console.WriteLine($"TryParse повернув: {ok}");
+
+            if (ok && obj != null)
+            {
+                PrintTable([obj], "Результат TryParse");
+                if (Asteroids.Count < _maxCapacity && ReadValidatedBool("Додати цей об'єкт до списку? (1/так, 0/ні): "))
+                {
+                    Asteroids.Add(obj);
+                    Console.WriteLine($"Об'єкт '{obj.Name}' додано до списку.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("obj = null. Виняток не виник — TryParse перехопив його всередині.");
+            }
+        }
+
+        private static void DemoToString()
+        {
+            if (Asteroids.Count == 0)
+            {
+                Console.WriteLine("Список порожній.");
+                return;
+            }
+
+            Console.WriteLine("Результат ToString() для кожного об'єкта:");
+            for (int i = 0; i < Asteroids.Count; i++)
+                Console.WriteLine($"{i + 1}. {Asteroids[i]}");
+
+            string original = Asteroids[0].ToString();
+            bool roundTrip = PizzaAsteroid.TryParse(original, out PizzaAsteroid? copy) && copy!.ToString() == original;
+            Console.WriteLine($"\nПеревірка сумісності ToString ↔ Parse для об'єкта №1: {(roundTrip ? "рядки збігаються ✔" : "НЕ збігаються ✘")}");
+            Console.WriteLine("(Примітка: під час перевірки створено тимчасову копію, тому CreatedCount збільшився на 1.)");
+        }
+
+        private static void DemoMerge()
+        {
+            if (Asteroids.Count < 2)
+            {
+                Console.WriteLine("Для злиття потрібно щонайменше 2 об'єкти у списку.");
+                return;
+            }
+
+            PrintTable(Asteroids, "Оберіть два астероїди для злиття");
+            int i1 = ReadIntInRange($"Номер першого (1..{Asteroids.Count}): ", 1, Asteroids.Count);
+            int i2 = ReadIntInRange($"Номер другого (1..{Asteroids.Count}): ", 1, Asteroids.Count);
+            Console.Write("Назва нового астероїда: ");
+            string newName = Console.ReadLine() ?? string.Empty;
+
+            try
+            {
+                PizzaAsteroid a = Asteroids[i1 - 1];
+                PizzaAsteroid b = Asteroids[i2 - 1];
+                PizzaAsteroid merged = PizzaAsteroid.Merge(a, b, newName);
+
+                Console.WriteLine($"Об'єм: {a.EstimatedVolumeKm3} + {b.EstimatedVolumeKm3} ≈ {merged.EstimatedVolumeKm3} км³");
+                PrintTable([merged], "Результат Merge");
+
+                if (ReadValidatedBool("Замінити два вихідні астероїди новим у списку? (1/так, 0/ні): "))
+                {
+                    Asteroids.Remove(a);
+                    Asteroids.Remove(b);
+                    Asteroids.Add(merged);
+                    Console.WriteLine($"Успіх! '{a.Name}' і '{b.Name}' злито в '{merged.Name}'.");
+                }
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                Console.WriteLine($"[Помилка Merge]: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"[Помилка Merge]: {ex.Message}");
+            }
+        }
+
+        private static void DemoTotalVolume()
+        {
+            if (Asteroids.Count == 0)
+            {
+                Console.WriteLine("Список порожній, сумарний об'єм = 0 км³.");
+                return;
+            }
+
+            double total = PizzaAsteroid.TotalVolume(Asteroids);
+            Console.WriteLine($"PizzaAsteroid.TotalVolume(список з {Asteroids.Count} об'єктів) = {total} км³");
+            Console.WriteLine($"Сумарна енергія, якщо всі впадуть на одну планету: {Math.Round(total * PizzaAsteroid.ImpactEnergyFactor, 2)} Мт ТНТ");
+        }
+
+        private static void PrintStringFormatHint()
+        {
+            Console.WriteLine("Формат рядка: Назва;Бортик;Діаметр;Температура;Сир;Дата[;Соус]");
+            Console.WriteLine("  Бортик: Thin, CheeseStuffed, DeepDish, Classic або 1–4; Сир: так/ні; Дата: dd.MM.yyyy");
+            Console.WriteLine("  Приклад: Пепероні-X;Thin;12.5;-40;так;12.04.2021;Барбекю");
         }
 
         private static void DemonstrateBehavior()
