@@ -3,4 +3,5 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="lab1/lab1.csproj" />
+  <Project Path="PizzaAsteroidAppTest/PizzaAsteroidAppTest.csproj" Id="fcbdb41d-3093-4ff6-874f-1991ce27cc16" />
 </Solution>

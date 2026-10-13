@@ -113,9 +113,10 @@ namespace PizzaAsteroidApp
             private set
             {
                 DateTime minDate = new(1990, 1, 1);
-                if (value < minDate || value > DateTime.Now.Date.AddDays(1))
+                DateTime date = value.Date;
+                if (date < minDate || date > DateTime.Today)
                     throw new ArgumentOutOfRangeException(nameof(value), "Дата відкриття має бути в межах від 01.01.1990 до сьогодення.");
-                _discoveryDate = value.Date;
+                _discoveryDate = date;
             }
         }
 
@@ -167,7 +168,7 @@ namespace PizzaAsteroidApp
             if (degrees <= 0)
                 throw new ArgumentOutOfRangeException(nameof(degrees), "Значення нагріву має бути додатним.");
 
-            int targetTemp = TemperatureCelsius + degrees;
+            long targetTemp = (long)TemperatureCelsius + degrees;
             TemperatureCelsius = ClampTemperature(targetTemp);
         }
 
@@ -200,6 +201,10 @@ namespace PizzaAsteroidApp
 
         public string CollideWithTarget(string targetPlanet)
         {
+            if (string.IsNullOrWhiteSpace(targetPlanet))
+                throw new ArgumentException("Назва цілі зіткнення не може бути порожньою.", nameof(targetPlanet));
+            targetPlanet = targetPlanet.Trim();
+
             double impactEnergyMegatons = CalculateImpactEnergy();
             string energyStr = impactEnergyMegatons < 0.01
                 ? impactEnergyMegatons.ToString("0.0000")
@@ -283,13 +288,17 @@ namespace PizzaAsteroidApp
             ArgumentNullException.ThrowIfNull(asteroids);
             double sum = 0;
             foreach (var a in asteroids)
+            {
+                if (a is null)
+                    throw new ArgumentException("Колекція не може містити null-елементи.", nameof(asteroids));
                 sum += a.EstimatedVolumeKm3;
+            }
             return Math.Round(sum, 2);
         }
 
-        private int ClampTemperature(int temp)
+        private static int ClampTemperature(long temp)
         {
-            return temp > 500 ? 500 : temp;
+            return temp > 500 ? 500 : (int)temp;
         }
 
         private void ApplySliceDivision(int parts)
