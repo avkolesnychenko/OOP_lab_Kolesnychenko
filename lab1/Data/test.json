@@ -1,0 +1,56 @@
+﻿[
+  {
+    "name": "Карбонара-99-190",
+    "crust": "Thin",
+    "diameter_km": 81.57,
+    "temperature_c": 53,
+    "extra_cheese": false,
+    "discovery_date": "2019-11-25T00:00:00+02:00",
+    "sauce": "Грибний Соус"
+  },
+  {
+    "name": "test",
+    "crust": "Classic",
+    "diameter_km": 20,
+    "temperature_c": 200,
+    "extra_cheese": true,
+    "discovery_date": "2001-12-20T00:00:00",
+    "sauce": "Томатний Класик"
+  },
+  {
+    "name": "Класичний-Базовий",
+    "crust": "CheeseStuffed",
+    "diameter_km": 50,
+    "temperature_c": 25,
+    "extra_cheese": true,
+    "discovery_date": "2026-10-27T00:00:00+02:00",
+    "sauce": "Часниковий"
+  },
+  {
+    "name": "Карбонара-99-807",
+    "crust": "DeepDish",
+    "diameter_km": 25.62,
+    "temperature_c": 21,
+    "extra_cheese": false,
+    "discovery_date": "2026-10-27T00:00:00+02:00",
+    "sauce": "Томатний Класик"
+  },
+  {
+    "name": "Карбонара-99-190",
+    "crust": "Thin",
+    "diameter_km": 81.57,
+    "temperature_c": 53,
+    "extra_cheese": false,
+    "discovery_date": "2019-11-25T00:00:00",
+    "sauce": "Грибний Соус"
+  },
+  {
+    "name": "Класичний-Базовий",
+    "crust": "CheeseStuffed",
+    "diameter_km": 50,
+    "temperature_c": 25,
+    "extra_cheese": true,
+    "discovery_date": "2026-10-27T00:00:00",
+    "sauce": "Часниковий"
+  }
+]
