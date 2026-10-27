@@ -1,0 +1,4 @@
+[
+  { "name": "Церера", "crust": "Thin", "diameter_km": 12.5, "temperature_c": -40, "extra_cheese": true, "discovery_date": "2021-04-12T00:00:00", "sauce": "Барбекю" },
+  { "name": "Гебе", "crust": "Thin", "diameter_km": 5000, "temperature_c": 10, "extra_cheese": false, "discovery_date": "2000-01-01T00:00:00", "sauce": "Песто" }
+]
