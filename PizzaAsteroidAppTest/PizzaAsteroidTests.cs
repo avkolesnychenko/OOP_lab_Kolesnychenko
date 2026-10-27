@@ -518,7 +518,7 @@ namespace PizzaAsteroidApp.Tests
             int count = PizzaAsteroid.CreatedCount;
 
             // Assert
-            Assert.IsTrue(count >= 1);
+            Assert.IsGreaterThanOrEqualTo(1, count);
         }
 
         #endregion
@@ -640,7 +640,7 @@ namespace PizzaAsteroidApp.Tests
 
             // Assert
             Assert.AreEqual(expected, volume, Delta);
-            Assert.IsTrue(volume < 0.01);
+            Assert.IsLessThan(0.01, volume);
         }
 
         #endregion
@@ -994,7 +994,7 @@ namespace PizzaAsteroidApp.Tests
 
             // Assert
             StringAssert.Contains(result, ";12.5;");
-            Assert.IsFalse(result.Contains("12,5"));
+            Assert.DoesNotContain("12,5", result);
         }
 
         #endregion
