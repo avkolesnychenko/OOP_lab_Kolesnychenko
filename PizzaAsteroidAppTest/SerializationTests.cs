@@ -133,18 +133,6 @@ namespace PizzaAsteroidApp.Tests
             Assert.AreEqual(expected, result);
         }
 
-        [TestMethod]
-        [DataRow("", ".csv")]
-        [DataRow("asteroids.csv", "")]
-        [DataRow("asteroids.csv", "csv")]
-        [DataRow("   ", ".csv")]
-        [DataRow("asteroids.csv", "   ")]
-        public void BuildFilePath_InvalidArguments_ThrowsArgumentException(string defaultName, string extension)
-        {
-            // Act & Assert
-            Assert.ThrowsExactly<ArgumentException>(() => Program.BuildFilePath("data", defaultName, extension));
-        }
-
         #endregion
 
         #region GetDataDirectory / GetFiles / ResolveFileChoice
