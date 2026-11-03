@@ -1,0 +1,29 @@
+﻿[
+  {
+    "name": "Класичний-Базовий",
+    "crust": "CheeseStuffed",
+    "diameter_km": 50,
+    "temperature_c": 25,
+    "extra_cheese": true,
+    "discovery_date": "2026-10-27T00:00:00+02:00",
+    "sauce": "Часниковий"
+  },
+  {
+    "name": "Пепероні-X-841",
+    "crust": "DeepDish",
+    "diameter_km": 38.66,
+    "temperature_c": -50,
+    "extra_cheese": false,
+    "discovery_date": "2026-10-27T00:00:00+02:00",
+    "sauce": "Томатний Класик"
+  },
+  {
+    "name": "test",
+    "crust": "Classic",
+    "diameter_km": 20,
+    "temperature_c": 250,
+    "extra_cheese": false,
+    "discovery_date": "2001-02-01T00:00:00",
+    "sauce": "Томатний Класик"
+  }
+]

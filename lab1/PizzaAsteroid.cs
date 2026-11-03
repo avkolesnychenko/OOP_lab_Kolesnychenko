@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace PizzaAsteroidApp
@@ -40,8 +41,12 @@ namespace PizzaAsteroidApp
             }
         }
 
+        [JsonPropertyName("extra_cheese")]
+        [JsonPropertyOrder(5)]
         public bool HasExtraCheese { get; set; }
 
+        [JsonPropertyName("sauce")]
+        [JsonPropertyOrder(7)]
         public string SauceType
         {
             get => _sauceType;
@@ -55,6 +60,9 @@ namespace PizzaAsteroidApp
             }
         }
 
+        [JsonRequired]
+        [JsonPropertyName("name")]
+        [JsonPropertyOrder(1)]
         public string Name
         {
             get => _name;
@@ -74,6 +82,10 @@ namespace PizzaAsteroidApp
             }
         }
 
+        [JsonRequired]
+        [JsonPropertyName("crust")]
+        [JsonPropertyOrder(2)]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public CrustType Crust
         {
             get => _crust;
@@ -85,6 +97,9 @@ namespace PizzaAsteroidApp
             }
         }
 
+        [JsonRequired]
+        [JsonPropertyName("diameter_km")]
+        [JsonPropertyOrder(3)]
         public double DiameterKm
         {
             get => _diameterKm;
@@ -96,6 +111,8 @@ namespace PizzaAsteroidApp
             }
         }
 
+        [JsonPropertyName("temperature_c")]
+        [JsonPropertyOrder(4)]
         public int TemperatureCelsius
         {
             get => _temperatureCelsius;
@@ -107,6 +124,9 @@ namespace PizzaAsteroidApp
             }
         }
 
+        [JsonInclude]
+        [JsonPropertyName("discovery_date")]
+        [JsonPropertyOrder(6)]
         public DateTime DiscoveryDate
         {
             get => _discoveryDate;
@@ -120,6 +140,7 @@ namespace PizzaAsteroidApp
             }
         }
 
+        [JsonIgnore]
         public double EstimatedVolumeKm3
         {
             get

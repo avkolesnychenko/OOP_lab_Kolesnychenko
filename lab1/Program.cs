@@ -1,5 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 
 namespace PizzaAsteroidApp
 {
@@ -8,11 +11,28 @@ namespace PizzaAsteroidApp
         private const string DateFormat = "dd.MM.yyyy";
         private const string DefaultSauce = "Томатний Класик";
 
+        public const string DefaultCsvFile = "asteroids.csv";
+        public const string DefaultJsonFile = "asteroids.json";
+        public const string CsvExtension = ".csv";
+        public const string JsonExtension = ".json";
+        public const string DataFolderName = "Data";
+
+        public static readonly string CsvHeader = string.Join(PizzaAsteroid.Separator,
+            "Name", "Crust", "DiameterKm", "TemperatureCelsius", "HasExtraCheese", "DiscoveryDate", "SauceType");
+
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
         private static readonly string[] RandomNames =
             { "Пепероні-X", "Квадро-Формаджо", "Карбонара-99", "Гаваї-Ультра", "Діавола-Prime" };
 
         private static readonly List<PizzaAsteroid> Asteroids = [];
         private static int _maxCapacity;
+        private static string _dataDirectory = string.Empty;
 
         public static bool IsFull(List<PizzaAsteroid> list, int maxCapacity)
         {
@@ -324,6 +344,205 @@ namespace PizzaAsteroidApp
             return true;
         }
 
+        #region Серіалізація
+
+        public static string BuildFilePath(string? input, string defaultFileName, string extension)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return defaultFileName;
+
+            string name = input.Trim().Trim('"').Trim();
+            if (name.Length == 0)
+                return defaultFileName;
+
+            if (!Path.GetExtension(name).Equals(extension, StringComparison.OrdinalIgnoreCase))
+                name += extension;
+            return name;
+        }
+
+        public static int SaveToCsv(List<PizzaAsteroid> list, string path)
+        {
+            ArgumentNullException.ThrowIfNull(list);
+            ValidatePath(path);
+            EnsureNoNullItems(list);
+
+            List<string> lines = new(list.Count + 1) { CsvHeader };
+            lines.AddRange(GetToStringLines(list));
+
+            File.WriteAllLines(path, lines, Encoding.UTF8);
+            return list.Count;
+        }
+
+        public static LoadResult LoadFromCsv(List<PizzaAsteroid> list, string path, int maxCapacity)
+        {
+            ArgumentNullException.ThrowIfNull(list);
+            ValidatePath(path);
+            ValidateCapacity(maxCapacity);
+
+            string[] lines = File.ReadAllLines(path, Encoding.UTF8);
+            LoadResult result = new();
+            bool isFirstLine = true;
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                if (isFirstLine)
+                {
+                    isFirstLine = false;
+                    if (IsCsvHeader(line))
+                        continue;
+                }
+
+                try
+                {
+                    PizzaAsteroid asteroid = PizzaAsteroid.Parse(line);
+                    if (list.Count >= maxCapacity)
+                    {
+                        result.OverCapacity++;
+                        continue;
+                    }
+                    list.Add(asteroid);
+                    result.Added++;
+                }
+                catch (Exception ex) when (ex is FormatException || ex is ArgumentException)
+                {
+                    result.Invalid++;
+                    result.Errors.Add($"Рядок {i + 1}: {ex.Message}");
+                }
+            }
+
+            return result;
+        }
+
+        public static bool IsCsvHeader(string? line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                return false;
+            string normalized = string.Join(PizzaAsteroid.Separator,
+                line.Split(PizzaAsteroid.Separator).Select(part => part.Trim()));
+            return normalized.Equals(CsvHeader, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static int SaveToJson(List<PizzaAsteroid> list, string path)
+        {
+            ArgumentNullException.ThrowIfNull(list);
+            ValidatePath(path);
+            EnsureNoNullItems(list);
+
+            string json = JsonSerializer.Serialize(list, JsonOptions);
+            File.WriteAllText(path, json, Encoding.UTF8);
+            return list.Count;
+        }
+
+        public static LoadResult LoadFromJson(List<PizzaAsteroid> list, string path, int maxCapacity)
+        {
+            ArgumentNullException.ThrowIfNull(list);
+            ValidatePath(path);
+            ValidateCapacity(maxCapacity);
+
+            string json = File.ReadAllText(path, Encoding.UTF8);
+            List<PizzaAsteroid?>? items;
+            try
+            {
+                items = JsonSerializer.Deserialize<List<PizzaAsteroid?>>(json, JsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                throw new FormatException($"Файл JSON пошкоджено або він має неправильну структуру. {ex.Message}", ex);
+            }
+            catch (ArgumentException ex)
+            {
+                throw new FormatException($"Дані у файлі JSON порушують правила предметної області. {ex.Message}", ex);
+            }
+
+            if (items is null)
+                throw new FormatException("Файл JSON не містить колекції об'єктів (значення null).");
+
+            LoadResult result = new();
+            for (int i = 0; i < items.Count; i++)
+            {
+                PizzaAsteroid? asteroid = items[i];
+                if (asteroid is null)
+                {
+                    result.Invalid++;
+                    result.Errors.Add($"Елемент #{i + 1}: значення null.");
+                    continue;
+                }
+                if (list.Count >= maxCapacity)
+                {
+                    result.OverCapacity++;
+                    continue;
+                }
+                list.Add(asteroid);
+                result.Added++;
+            }
+
+            return result;
+        }
+
+        public static string GetDataDirectory(string startDirectory)
+        {
+            if (string.IsNullOrWhiteSpace(startDirectory))
+                throw new ArgumentException("Початкова папка не може бути порожньою.", nameof(startDirectory));
+
+            DirectoryInfo? dir = new(startDirectory);
+            while (dir is not null)
+            {
+                if (dir.Exists && dir.EnumerateFiles("*.csproj").Any())
+                    return Path.Combine(dir.FullName, DataFolderName);
+                dir = dir.Parent;
+            }
+            return Path.Combine(Path.GetFullPath(startDirectory), DataFolderName);
+        }
+
+        public static List<string> GetFiles(string directory, string extension)
+        {
+            if (string.IsNullOrWhiteSpace(directory))
+                throw new ArgumentException("Папка не може бути порожньою.", nameof(directory));
+            if (string.IsNullOrWhiteSpace(extension) || extension[0] != '.')
+                throw new ArgumentException("Розширення має починатися з крапки, наприклад '.csv'.", nameof(extension));
+            if (!Directory.Exists(directory))
+                return [];
+
+            List<string> files = Directory.EnumerateFiles(directory)
+                .Where(f => Path.GetExtension(f).Equals(extension, StringComparison.OrdinalIgnoreCase))
+                .Select(f => Path.GetFileName(f))
+                .ToList();
+            files.Sort(StringComparer.OrdinalIgnoreCase);
+            return files;
+        }
+
+        public static string ResolveFileChoice(string? input, List<string> files, string defaultFileName, string extension)
+        {
+            ArgumentNullException.ThrowIfNull(files);
+            if (TryParseIntInRange(input?.Trim(), 1, Math.Max(files.Count, 1), out int number) && files.Count > 0)
+                return files[number - 1];
+            return BuildFilePath(input, defaultFileName, extension);
+        }
+
+        private static void ValidatePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("Шлях до файлу не може бути порожнім.", nameof(path));
+        }
+
+        private static void ValidateCapacity(int maxCapacity)
+        {
+            if (maxCapacity <= 0)
+                throw new ArgumentOutOfRangeException(nameof(maxCapacity), "Максимальна кількість об'єктів має бути більшою за нуль.");
+        }
+
+        private static void EnsureNoNullItems(List<PizzaAsteroid> list)
+        {
+            if (list.Contains(null!))
+                throw new ArgumentException("Колекція не може містити null-елементи.", nameof(list));
+        }
+
+        #endregion
+
         private static string ValidateName(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -337,6 +556,9 @@ namespace PizzaAsteroidApp
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.InputEncoding = System.Text.Encoding.UTF8;
 
+            _dataDirectory = GetDataDirectory(AppContext.BaseDirectory);
+            Directory.CreateDirectory(_dataDirectory);
+
             _maxCapacity = ReadPositiveInt("Введіть максимальну кількість астероїдів N (N > 0): ");
 
             bool running = true;
@@ -349,7 +571,9 @@ namespace PizzaAsteroidApp
                 Console.WriteLine("4 – Продемонструвати поведінку");
                 Console.WriteLine("5 – Видалити об'єкт");
                 Console.WriteLine("6 – Продемонструвати static-методи");
-                Console.WriteLine("7 – Сортувати список");
+                Console.WriteLine("7 – Зберегти колекцію об'єктів у файлі");
+                Console.WriteLine("8 – Зчитати колекцію об'єктів з файлу");
+                Console.WriteLine("9 – Очистити колекцію об'єктів");
                 Console.WriteLine("0 – Вийти з програми");
                 Console.Write(">");
 
@@ -367,7 +591,9 @@ namespace PizzaAsteroidApp
                     case "4": DemonstrateBehavior(); break;
                     case "5": DeleteAsteroidMenu(); break;
                     case "6": DemonstrateStaticMethods(); break;
-                    case "7": SortMenu(); break;
+                    case "7": SaveMenu(); break;
+                    case "8": LoadMenu(); break;
+                    case "9": ClearMenu(); break;
                     case "0":
                         running = false;
                         Console.WriteLine("Робота програми завершена. Гарного космічного апетиту!");
@@ -552,7 +778,6 @@ namespace PizzaAsteroidApp
             Console.WriteLine("Спосіб видалення:");
             Console.WriteLine("1 – За порядковим номером у таблиці (RemoveAt)");
             Console.WriteLine("2 – За назвою, усі збіги (RemoveAll)");
-            Console.WriteLine("3 – Очистити весь список (Clear)");
             Console.Write(">");
 
             try
@@ -571,10 +796,6 @@ namespace PizzaAsteroidApp
                         int count = RemoveByName(Asteroids, name);
                         Console.WriteLine(count > 0 ? $"Успіх! Видалено об'єктів: {count}." : $"Об'єктів з назвою '{name}' не знайдено.");
                         break;
-                    case "3":
-                        if (ReadBool($"Видалити всі {Asteroids.Count} об'єкти? (1/так, 0/ні): "))
-                            Console.WriteLine($"Успіх! Видалено об'єктів: {Clear(Asteroids)}.");
-                        break;
                     default:
                         Console.WriteLine("Помилка вибору.");
                         break;
@@ -587,27 +808,166 @@ namespace PizzaAsteroidApp
         }
 
         [ExcludeFromCodeCoverage]
-        private static void SortMenu()
+        private static void SaveMenu()
         {
-            if (Asteroids.Count < 2)
+            if (Asteroids.Count == 0)
             {
-                Console.WriteLine("Для сортування потрібно щонайменше 2 об'єкти.");
+                Console.WriteLine("Колекція порожня — нічого зберігати.");
                 return;
             }
 
-            Console.WriteLine("1 – Сортувати за назвою");
-            Console.WriteLine("2 – Сортувати за діаметром");
+            Console.WriteLine("Формат збереження:");
+            Console.WriteLine("1 – зберегти у файл *.csv");
+            Console.WriteLine("2 – зберегти у файл *.json");
             Console.Write(">");
 
+            bool isCsv;
             switch (ReadLine())
             {
-                case "1": SortByName(Asteroids); break;
-                case "2": SortByDiameter(Asteroids); break;
+                case "1": isCsv = true; break;
+                case "2": isCsv = false; break;
                 default:
-                    Console.WriteLine("Помилка вибору.");
+                    Console.WriteLine("Помилка! Невідомий формат.");
                     return;
             }
-            PrintTable(Asteroids, "Відсортований список");
+
+            string path = AskFilePath(isCsv);
+            if (File.Exists(path) && !ReadBool($"Файл '{path}' уже існує. Перезаписати? (1/так, 0/ні): "))
+            {
+                Console.WriteLine("Збереження скасовано.");
+                return;
+            }
+
+            try
+            {
+                int saved = isCsv ? SaveToCsv(Asteroids, path) : SaveToJson(Asteroids, path);
+                Console.WriteLine($"Успіх! У файл '{Path.GetFullPath(path)}' збережено об'єктів: {saved}.");
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
+            {
+                Console.WriteLine($"[Помилка збереження]: {ex.Message}");
+            }
+        }
+
+        [ExcludeFromCodeCoverage]
+        private static void LoadMenu()
+        {
+            if (IsFull(Asteroids, _maxCapacity))
+            {
+                Console.WriteLine($"Досягнуто ліміт N = {_maxCapacity}. Нові об'єкти не можуть бути додані — спершу видаліть або очистіть колекцію.");
+                return;
+            }
+
+            Console.WriteLine("Формат зчитування:");
+            Console.WriteLine("1 – зчитати з файлу *.csv");
+            Console.WriteLine("2 – зчитати з файлу *.json");
+            Console.Write(">");
+
+            bool isCsv;
+            switch (ReadLine())
+            {
+                case "1": isCsv = true; break;
+                case "2": isCsv = false; break;
+                default:
+                    Console.WriteLine("Помилка! Невідомий формат.");
+                    return;
+            }
+
+            string? path = AskFileToLoad(isCsv);
+            if (path is null)
+                return;
+            if (!File.Exists(path))
+            {
+                Console.WriteLine($"Файл '{Path.GetFullPath(path)}' не знайдено.");
+                return;
+            }
+
+            if (Asteroids.Count > 0)
+                Console.WriteLine($"У колекції вже є {Asteroids.Count} об'єкт(ів) — зчитані об'єкти буде додано до списку.");
+
+            try
+            {
+                LoadResult result = isCsv
+                    ? LoadFromCsv(Asteroids, path, _maxCapacity)
+                    : LoadFromJson(Asteroids, path, _maxCapacity);
+                PrintLoadResult(result, isCsv);
+            }
+            catch (FormatException ex)
+            {
+                Console.WriteLine($"[Помилка десеріалізації JSON]: {ex.Message}");
+                Console.WriteLine("Колекцію не змінено: жодного об'єкта не додано.");
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                Console.WriteLine($"[Помилка читання файлу]: {ex.Message}");
+            }
+        }
+
+        [ExcludeFromCodeCoverage]
+        private static void PrintLoadResult(LoadResult result, bool isCsv)
+        {
+            Console.WriteLine($"Десеріалізовано та додано до колекції об'єктів: {result.Added}.");
+
+            if (result.Invalid > 0)
+            {
+                Console.WriteLine(isCsv
+                    ? $"Пропущено некоректних рядків: {result.Invalid}:"
+                    : $"Пропущено некоректних елементів: {result.Invalid}:");
+                foreach (string error in result.Errors)
+                    Console.WriteLine($"  - {error}");
+            }
+
+            if (result.OverCapacity > 0)
+                Console.WriteLine($"Не додано через ліміт N = {_maxCapacity}: {result.OverCapacity} коректних об'єкт(ів).");
+
+            Console.WriteLine($"Тепер у колекції: {Asteroids.Count} / {_maxCapacity}.");
+            if (result.Added > 0)
+                PrintTable(Asteroids, "Поточна колекція");
+        }
+
+        [ExcludeFromCodeCoverage]
+        private static void ClearMenu()
+        {
+            if (Asteroids.Count == 0)
+            {
+                Console.WriteLine("Колекція вже порожня.");
+                return;
+            }
+
+            if (ReadBool($"Видалити всі {Asteroids.Count} об'єкт(и)? (1/так, 0/ні): "))
+                Console.WriteLine($"Успіх! Колекцію очищено, видалено об'єктів: {Clear(Asteroids)}.");
+            else
+                Console.WriteLine("Очищення скасовано.");
+        }
+
+        [ExcludeFromCodeCoverage]
+        private static string AskFilePath(bool isCsv)
+        {
+            string defaultName = isCsv ? DefaultCsvFile : DefaultJsonFile;
+            string extension = isCsv ? CsvExtension : JsonExtension;
+            Console.Write($"Введіть ім'я файлу (Enter — '{defaultName}'): ");
+            return Path.Combine(_dataDirectory, BuildFilePath(ReadLine(), defaultName, extension));
+        }
+
+        [ExcludeFromCodeCoverage]
+        private static string? AskFileToLoad(bool isCsv)
+        {
+            string defaultName = isCsv ? DefaultCsvFile : DefaultJsonFile;
+            string extension = isCsv ? CsvExtension : JsonExtension;
+            List<string> files = GetFiles(_dataDirectory, extension);
+
+            if (files.Count == 0)
+            {
+                Console.WriteLine($"У папці '{_dataDirectory}' немає файлів *{extension}.");
+                return null;
+            }
+
+            Console.WriteLine($"Файли *{extension} у папці '{_dataDirectory}':");
+            for (int i = 0; i < files.Count; i++)
+                Console.WriteLine($"  {i + 1} – {files[i]}");
+
+            Console.Write($"Введіть номер або ім'я файлу (Enter — '{defaultName}'): ");
+            return Path.Combine(_dataDirectory, ResolveFileChoice(ReadLine(), files, defaultName, extension));
         }
 
         [ExcludeFromCodeCoverage]

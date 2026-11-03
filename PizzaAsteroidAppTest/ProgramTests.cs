@@ -31,7 +31,7 @@ namespace PizzaAsteroidApp.Tests
             PizzaAsteroid.ImpactEnergyFactor = _savedFactor;
             _list.Clear();
         }
-        
+
         #region IsFull
 
         [TestMethod]
@@ -673,7 +673,7 @@ namespace PizzaAsteroidApp.Tests
 
             // Assert
             Assert.AreEqual(3, removed);
-            Assert.AreEqual(2, _list.Count);
+            Assert.HasCount(2, _list);
             Assert.IsFalse(_list.Exists(a => a.Name.Equals("Альфа", StringComparison.OrdinalIgnoreCase)));
         }
 
@@ -685,7 +685,7 @@ namespace PizzaAsteroidApp.Tests
 
             // Assert
             Assert.AreEqual(0, removed);
-            Assert.AreEqual(3, _list.Count);
+            Assert.HasCount(3, _list);
         }
 
         [TestMethod]
@@ -696,7 +696,7 @@ namespace PizzaAsteroidApp.Tests
         {
             // Act & Assert
             Assert.Throws<ArgumentException>(() => Program.RemoveByName(_list, name!));
-            Assert.AreEqual(3, _list.Count);
+            Assert.HasCount(3, _list);
         }
 
         #endregion
@@ -711,7 +711,7 @@ namespace PizzaAsteroidApp.Tests
 
             // Assert
             Assert.AreEqual(3, removed);
-            Assert.AreEqual(0, _list.Count);
+            Assert.IsEmpty(_list);
         }
 
         [TestMethod]
@@ -768,7 +768,7 @@ namespace PizzaAsteroidApp.Tests
             Program.SortByName(empty);
 
             // Assert
-            Assert.AreEqual(0, empty.Count);
+            Assert.IsEmpty(empty);
         }
 
         [TestMethod]
@@ -791,9 +791,9 @@ namespace PizzaAsteroidApp.Tests
             // Assert
             Assert.AreEqual("Альфа-Бета", merged.Name);
             Assert.AreEqual(20.8, merged.DiameterKm, 0.01);
-            Assert.AreEqual(CrustType.Classic, merged.Crust);     // бортик більшого (Бета)
-            Assert.IsTrue(merged.HasExtraCheese);                  // хоча б в одного є сир
-            Assert.AreEqual(3, _list.Count);
+            Assert.AreEqual(CrustType.Classic, merged.Crust);
+            Assert.IsTrue(merged.HasExtraCheese);
+            Assert.HasCount(3, _list);
             CollectionAssert.DoesNotContain(_list, merged);
         }
 
@@ -833,7 +833,7 @@ namespace PizzaAsteroidApp.Tests
             Program.ReplaceWithMerged(_list, _beta, _vega, merged);
 
             // Assert
-            Assert.AreEqual(2, _list.Count);
+            Assert.HasCount(2, _list);
             Assert.AreSame(_alpha, _list[0]);
             Assert.AreSame(merged, _list[1]);
             CollectionAssert.DoesNotContain(_list, _beta);
@@ -849,7 +849,7 @@ namespace PizzaAsteroidApp.Tests
 
             // Act & Assert
             Assert.ThrowsExactly<ArgumentException>(() => Program.ReplaceWithMerged(_list, outsider, _beta, merged));
-            Assert.AreEqual(3, _list.Count);
+            Assert.HasCount(3, _list);
             Assert.AreSame(_beta, _list[1]);
         }
 
@@ -876,7 +876,7 @@ namespace PizzaAsteroidApp.Tests
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() => Program.ReplaceWithMerged(_list, _alpha, outsider, merged));
-            Assert.AreEqual(3, _list.Count);
+            Assert.HasCount(3, _list);
         }
 
         [TestMethod]
@@ -951,7 +951,7 @@ namespace PizzaAsteroidApp.Tests
             List<string> lines = Program.GetToStringLines(_list);
 
             // Assert
-            Assert.AreEqual(3, lines.Count);
+            Assert.HasCount(3, lines);
             Assert.AreEqual(_alpha.ToString(), lines[0]);
             Assert.AreEqual("Бета;Classic;20;0;ні;01.06.2015;Томатний Класик", lines[1]);
             StringAssert.StartsWith(lines[2], "Вега;Thin;5.5;100;ні;03.03.2010");
@@ -984,7 +984,7 @@ namespace PizzaAsteroidApp.Tests
             string[] lines = table.Split(Environment.NewLine);
 
             // Assert
-            Assert.AreEqual(3 + 5, lines.Length);   // заголовок, 3 роздільники, шапка, 3 рядки
+            Assert.HasCount(3 + 5, lines);
             Assert.AreEqual("Тестова таблиця", lines[0]);
             StringAssert.Contains(lines[2], "Назва");
             StringAssert.Contains(table, "Альфа");
